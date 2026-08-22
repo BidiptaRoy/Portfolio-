@@ -2,7 +2,7 @@ import "server-only";
 
 import { requireAdmin } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
-import type { Project } from "@/types/content";
+import type { Education, Experience, Profile, Project, Skill } from "@/types/content";
 
 /**
  * Admin reads — the ONLY queries that return unpublished records.
@@ -67,6 +67,112 @@ export async function getProjectForAdmin(slug: string): Promise<Project | null> 
       challenges: true,
       status: true,
       sortOrder: true,
+    },
+  });
+}
+
+const experienceFields = {
+  slug: true,
+  kind: true,
+  engagementType: true,
+  title: true,
+  organization: true,
+  platform: true,
+  location: true,
+  startDate: true,
+  endDate: true,
+  current: true,
+  summary: true,
+  highlights: true,
+  skills: true,
+  status: true,
+  sortOrder: true,
+} as const;
+
+const educationFields = {
+  slug: true,
+  institution: true,
+  degree: true,
+  field: true,
+  location: true,
+  startDate: true,
+  endDate: true,
+  expected: true,
+  highlights: true,
+  status: true,
+  sortOrder: true,
+} as const;
+
+/** Includes drafts. Never call from a public page. */
+export async function getExperienceForAdmin(): Promise<Experience[]> {
+  await requireAdmin();
+  return prisma.experience.findMany({
+    orderBy: [{ sortOrder: "asc" }],
+    select: experienceFields,
+  });
+}
+
+/** Includes drafts. Never call from a public page. */
+export async function getExperienceEntryForAdmin(slug: string): Promise<Experience | null> {
+  await requireAdmin();
+  return prisma.experience.findUnique({ where: { slug }, select: experienceFields });
+}
+
+/** Includes drafts. Never call from a public page. */
+export async function getEducationForAdmin(): Promise<Education[]> {
+  await requireAdmin();
+  return prisma.education.findMany({
+    orderBy: [{ sortOrder: "asc" }],
+    select: educationFields,
+  });
+}
+
+/** Includes drafts. Never call from a public page. */
+export async function getEducationEntryForAdmin(slug: string): Promise<Education | null> {
+  await requireAdmin();
+  return prisma.education.findUnique({ where: { slug }, select: educationFields });
+}
+
+/**
+ * Skills carry their `id` in the admin, unlike every other entity here.
+ *
+ * Skill names are not slugs — "HTML/CSS" contains a slash, which cannot go in
+ * a route segment without encoding games. Routing and updating by id avoids
+ * the whole class of problem, and lets a skill be renamed freely.
+ */
+export type AdminSkill = Skill & { id: string };
+
+/** Includes drafts. Never call from a public page. */
+export async function getSkillsForAdmin(): Promise<AdminSkill[]> {
+  await requireAdmin();
+  return prisma.skill.findMany({
+    orderBy: [{ sortOrder: "asc" }],
+    select: { id: true, name: true, category: true, status: true, sortOrder: true },
+  });
+}
+
+/** Includes drafts. Never call from a public page. */
+export async function getSkillForAdmin(id: string): Promise<AdminSkill | null> {
+  await requireAdmin();
+  return prisma.skill.findUnique({
+    where: { id },
+    select: { id: true, name: true, category: true, status: true, sortOrder: true },
+  });
+}
+
+/** Null when the singleton has never been created. The form handles that. */
+export async function getProfileForAdmin(): Promise<Profile | null> {
+  await requireAdmin();
+  return prisma.profile.findUnique({
+    where: { id: "singleton" },
+    select: {
+      name: true,
+      headline: true,
+      shortBio: true,
+      longBio: true,
+      location: true,
+      email: true,
+      availability: true,
     },
   });
 }

@@ -13,10 +13,10 @@ import { cn } from "@/lib/utils";
 const sections = [
   { href: "/admin", label: "Dashboard", ready: true },
   { href: "/admin/projects", label: "Projects", ready: true },
-  { href: "/admin/experience", label: "Experience", ready: false },
-  { href: "/admin/education", label: "Education", ready: false },
-  { href: "/admin/skills", label: "Skills", ready: false },
-  { href: "/admin/profile", label: "Profile", ready: false },
+  { href: "/admin/experience", label: "Experience", ready: true },
+  { href: "/admin/education", label: "Education", ready: true },
+  { href: "/admin/skills", label: "Skills", ready: true },
+  { href: "/admin/profile", label: "Profile", ready: true },
 ];
 
 export function AdminNav() {

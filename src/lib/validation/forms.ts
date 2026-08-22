@@ -154,6 +154,94 @@ export const projectFormSchema = z.object({
 
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
+export const experienceFormSchema = z
+  .object({
+    slug: z
+      .string()
+      .trim()
+      .min(1, "Required")
+      .regex(SLUG, "Lowercase letters, numbers and hyphens only"),
+    kind: z.enum(["TECHNICAL", "PROFESSIONAL", "LEADERSHIP"]),
+    engagementType: z.enum([
+      "INTERNSHIP",
+      "EMPLOYMENT",
+      "CONTRACT",
+      "PLATFORM_ENGAGEMENT",
+      "VOLUNTEER",
+      "MEMBERSHIP",
+    ]),
+    title: z.string().trim().min(1, "Required"),
+    organization: optionalText,
+    platform: optionalText,
+    location: optionalText,
+    startDate: z
+      .string()
+      .transform((value) => normalizeYearMonth(value))
+      .refine((value) => value !== false && value !== null, "Required — e.g. 2025-06")
+      .transform((value) => value as string),
+    endDate: optionalYearMonth,
+    current: checkbox,
+    summary: z.string().trim().min(1, "Required"),
+    highlights: lineList,
+    skills: lineList,
+    status: z.enum(["DRAFT", "PUBLISHED"]),
+    sortOrder: z.coerce.number().int(),
+  })
+  // Mirrors the rule in content.ts. Without it a stale end date left behind
+  // when a role is marked current renders as "May 2026 – Aug 2026 · Present".
+  .refine((value) => (value.current ? value.endDate === null : value.endDate !== null), {
+    message: "Clear the end date for a current role, or set one for a finished role",
+    path: ["endDate"],
+  });
+
+export const educationFormSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Required")
+    .regex(SLUG, "Lowercase letters, numbers and hyphens only"),
+  institution: z.string().trim().min(1, "Required"),
+  degree: z.string().trim().min(1, "Required"),
+  field: z.string().trim().min(1, "Required"),
+  location: optionalText,
+  startDate: z
+    .string()
+    .transform((value) => normalizeYearMonth(value))
+    .refine((value) => value !== false && value !== null, "Required — e.g. 2023-09")
+    .transform((value) => value as string),
+  endDate: optionalYearMonth,
+  expected: checkbox,
+  highlights: lineList,
+  status: z.enum(["DRAFT", "PUBLISHED"]),
+  sortOrder: z.coerce.number().int(),
+});
+
+export const skillFormSchema = z.object({
+  name: z.string().trim().min(1, "Required"),
+  category: z.enum(["LANGUAGE", "FRAMEWORK", "DATABASE", "TOOL", "PRACTICE"]),
+  status: z.enum(["DRAFT", "PUBLISHED"]),
+  sortOrder: z.coerce.number().int(),
+});
+
+export const profileFormSchema = z.object({
+  name: z.string().trim().min(1, "Required"),
+  headline: z.string().trim().min(1, "Required"),
+  shortBio: z.string().trim().min(1, "Required"),
+  // One paragraph per blank-line-separated block, rendered in order.
+  longBio: z
+    .string()
+    .transform((value) =>
+      value
+        .split(/\n\s*\n/)
+        .map((paragraph) => paragraph.trim())
+        .filter((paragraph) => paragraph.length > 0),
+    )
+    .refine((paragraphs) => paragraphs.length > 0, "At least one paragraph is required"),
+  location: z.string().trim().min(1, "Required"),
+  email: z.email("Must be a valid email address"),
+  availability: optionalText,
+});
+
 /**
  * The shape a form action returns to `useActionState`.
  *
@@ -166,6 +254,8 @@ export type ProjectFormValues = z.infer<typeof projectFormSchema>;
 export type FormState = {
   error: string | null;
   fieldErrors: Record<string, string[]>;
+  /** Set by actions that stay on the page instead of redirecting. */
+  success?: boolean;
 };
 
 export const emptyFormState: FormState = { error: null, fieldErrors: {} };

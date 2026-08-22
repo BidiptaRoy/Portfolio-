@@ -4,7 +4,8 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Current phase: 8 — Admin CMS.** Projects are editable; the other entities follow.
+**Current phase: 9 — Media and contact.** Phases 1–8 complete: the CMS is live and
+every content type is editable at `/admin`.
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -184,7 +185,31 @@ Split in two so the pattern is proven on one entity before it is repeated.
 - [x] `revalidatePath` on every mutation, including `/projects/[slug]` with
       `type: "page"` and `/sitemap.xml`
 - [x] **Layer 3 verified** — see below
-- [ ] Experience, Education, Skills, Profile modules — same pattern repeated
+- [x] Experience, Education, Skills, Profile modules — same pattern repeated
+- [x] `FormShell` extracted so every form gets error focus and "not saved"
+      messaging by construction, after a real bug where a rejected save was
+      indistinguishable from a successful one
+
+**Phase 8 complete.** Every content type is editable at `/admin` without touching
+code — which was the founding requirement of this project.
+
+Skills route by `id` rather than name: skill names are not slugs ("HTML/CSS"
+contains a slash), and routing by id also lets a skill be renamed freely.
+
+### Auditing the auth guard
+
+Every mutating Server Action must call `requireAdmin()` as its first statement.
+To re-check after any change:
+
+```powershell
+Get-ChildItem src/server/actions -Filter *.ts | ForEach-Object {
+  [regex]::Matches((Get-Content $_.FullName -Raw),
+    '(?s)export async function (\w+)\s*\([^)]*\)[^{]*\{(.*?)\n\}')
+}
+```
+
+Last run: 10 of 10 mutating actions guarded. `login` and `logout` in `auth.ts`
+are the authentication endpoints themselves and correctly are not.
 
 ### Layer 3 verification
 

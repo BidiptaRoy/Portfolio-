@@ -22,8 +22,8 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 8 (Admin CMS). Phases 1–7 complete; Projects are editable at
-  `/admin/projects`. See `docs/roadmap.md`.
+- **Current phase:** Phase 9 (Media and contact). Phases 1–8 complete — every content
+  type is editable at `/admin` without touching code. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -157,6 +157,11 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
 - **Every mutation must revalidate.** A write to the database is invisible until the
   affected paths are invalidated — including `/sitemap.xml`, and `/projects/[slug]` with
   `type: "page"` for dynamic segments.
+- **Every admin form uses `FormShell`.** It focuses the first invalid field and states
+  plainly that nothing was saved. This exists because a rejected save once looked
+  identical to a successful one and cost a real edit — do not hand-roll a form without it.
+- **Be liberal in what date input you accept.** `normalizeYearMonth` reads `2025`,
+  `2025-6`, `6/2025`, and `June 2025`. Rejecting a reasonable format is a bug.
 - **Every content model** carries `status: DRAFT | PUBLISHED`, `sortOrder`, and timestamps.
   Public queries filter to `PUBLISHED`.
 - **Validate on the server regardless of client validation.** Client validation is UX.

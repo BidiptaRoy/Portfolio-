@@ -19,9 +19,9 @@ export default async function AdminPage() {
 
   const tiles = [
     { label: "Projects", value: counts.projects, href: "/admin/projects" },
-    { label: "Experience", value: counts.experience, href: null },
-    { label: "Education", value: counts.education, href: null },
-    { label: "Skills", value: counts.skills, href: null },
+    { label: "Experience", value: counts.experience, href: "/admin/experience" },
+    { label: "Education", value: counts.education, href: "/admin/education" },
+    { label: "Skills", value: counts.skills, href: "/admin/skills" },
   ];
 
   return (
@@ -30,7 +30,7 @@ export default async function AdminPage() {
         level={1}
         eyebrow="Dashboard"
         title="Content"
-        lead="Counts include drafts. Editing for the remaining sections lands next."
+        lead="Counts include drafts. Every section here is editable without touching code."
       />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
