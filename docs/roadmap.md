@@ -146,11 +146,31 @@ it was designed to do.
 
 ## Phase 7 — Authentication
 
-- [ ] Auth.js v5, Credentials provider, argon2id
-- [ ] `scripts/create-admin.ts` — no HTTP registration route, ever
-- [ ] `/login` page
-- [ ] Three enforcement layers: middleware, page/layout `auth()`, **and inside every action**
-- [ ] Verify each layer independently
+- [x] Auth.js v5, Credentials provider, argon2id
+- [x] `scripts/create-admin.ts` with a hidden password prompt — no HTTP
+      registration route exists anywhere in the codebase
+- [x] `/login` page and `/admin` shell
+- [x] Layer 1 — `src/proxy.ts` (NOT `middleware.ts`; renamed in Next 16)
+- [x] Layer 2 — `auth()` in both the admin layout and the admin page
+- [ ] Layer 3 — inside every Server Action. Lands with the Phase 8 mutations,
+      which are the first writes that need it.
+
+Verified against a running server:
+
+| Check                                | Result                          |
+| ------------------------------------ | ------------------------------- |
+| `GET /admin` unauthenticated         | 307 → `/login?callbackUrl=…`    |
+| POST credentials with no CSRF token  | 302 → `error=MissingCSRF`       |
+| POST with valid CSRF, wrong password | 302 → `error=CredentialsSignin` |
+| Session cookie after failed attempts | none issued                     |
+| Timing, real vs. nonexistent account | 43 ms vs 37 ms — inside noise   |
+
+The timing result is the dummy-hash defence working. Without it the
+nonexistent-account path returns in a few milliseconds and the shared error
+message becomes meaningless.
+
+**Still missing: rate limiting.** Nothing currently stops thousands of guesses.
+That is Phase 10, and it is the largest remaining gap in the auth surface.
 
 ## Phase 8 — Admin CMS
 
