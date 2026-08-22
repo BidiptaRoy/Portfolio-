@@ -113,6 +113,21 @@ export interface Skill extends ContentMeta {
   category: SkillCategory;
 }
 
+/**
+ * A resume file. Versioned rather than overwritten so an older copy is never
+ * lost, and so `status` can hold a revision back from the public site while
+ * it is being corrected.
+ */
+export interface ResumeVersion extends ContentMeta {
+  label: string;
+  /** Path under /public today; a Blob URL from Phase 9. */
+  fileUrl: string;
+  /** The filename a visitor's browser saves it as. */
+  downloadName: string;
+  updatedAt: YearMonth;
+  isCurrent: boolean;
+}
+
 export type SocialPlatform = "GITHUB" | "LINKEDIN" | "EMAIL";
 
 export interface SocialLink extends ContentMeta {

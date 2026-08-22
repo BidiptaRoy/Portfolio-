@@ -80,13 +80,17 @@ Outstanding content gaps — these need Bidipta, not invention:
 
 ## Phase 4 — Public portfolio
 
-- [ ] Home
-- [ ] About (includes the services pointer)
-- [ ] Experience — technical / professional split driven by `Experience.kind`
-- [ ] Projects index with tag filtering
+- [x] Home — hero, featured projects, technical experience strip, contact prompt
+- [x] About — narrative, education, skills, social links, services pointer
+- [x] Experience — three sections from `Experience.kind`; empty ones are omitted
+- [x] Resume — download, new-tab, and inline preview; degrades when unpublished
+- [ ] Projects index with technology filtering
 - [ ] Project detail `[slug]` — the pages that actually earn interviews
-- [ ] Resume
 - [ ] Contact (static; form arrives in Phase 9)
+
+> The resume PDF currently published has a typo in its contact email
+> (`bidiptar@bu.com` should be `bidiptar@bu.edu`). Set `status` to `"DRAFT"` in
+> `src/content/resume.ts` to pull it from the public site without deleting it.
 
 ## Phase 5 — SEO, accessibility, performance
 

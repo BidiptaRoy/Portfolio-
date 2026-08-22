@@ -122,6 +122,15 @@ export const skillSchema = z.object({
   category: z.enum(["LANGUAGE", "FRAMEWORK", "DATABASE", "TOOL", "PRACTICE"]),
 });
 
+export const resumeVersionSchema = z.object({
+  ...contentMeta,
+  label: z.string().min(1),
+  fileUrl: z.string().min(1),
+  downloadName: z.string().min(1),
+  updatedAt: yearMonth,
+  isCurrent: z.boolean(),
+});
+
 export const socialLinkSchema = z.object({
   ...contentMeta,
   platform: z.enum(["GITHUB", "LINKEDIN", "EMAIL"]),

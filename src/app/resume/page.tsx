@@ -1,20 +1,71 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/layout/container";
+import { buttonStyles } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { formatYearMonth } from "@/lib/format";
+import { getCurrentResume } from "@/server/queries/resume";
 
-export const metadata: Metadata = { title: "Resume · Bidipta Roy" };
+export const metadata: Metadata = {
+  title: "Resume · Bidipta Roy",
+  description: "Education, experience, projects, and skills in one page.",
+};
 
-export default function ResumePage() {
+export default async function ResumePage() {
+  const resume = await getCurrentResume();
+
   return (
     <Container width="narrow" className="py-16 sm:py-24">
       <SectionHeading
         level={1}
         eyebrow="Resume"
         title="Resume"
-        lead="A current copy, available to read here or download."
+        lead={resume ? `Last updated ${formatYearMonth(resume.updatedAt)}.` : undefined}
       />
-      <p className="text-ink-muted mt-8">This section is being written.</p>
+
+      {resume ? (
+        <>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a href={resume.fileUrl} download={resume.downloadName} className={buttonStyles()}>
+              Download PDF
+            </a>
+            <a
+              href={resume.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonStyles({ variant: "secondary" })}
+            >
+              Open in new tab
+            </a>
+          </div>
+
+          {/*
+            An <object> rather than an <iframe>: it degrades to its children
+            when the browser cannot render a PDF inline, which is the norm on
+            iOS Safari and most Android browsers. An iframe would show a blank
+            box there instead, with the download link buried above the fold.
+          */}
+          <object
+            data={resume.fileUrl}
+            type="application/pdf"
+            aria-label="Resume preview"
+            className="border-line bg-surface mt-8 hidden h-[46rem] w-full rounded-lg border sm:block"
+          >
+            <p className="text-ink-muted p-6 text-sm">
+              Your browser cannot display PDFs inline.{" "}
+              <a href={resume.fileUrl} className="text-accent hover:text-accent-hover">
+                Download the resume
+              </a>{" "}
+              instead.
+            </p>
+          </object>
+        </>
+      ) : (
+        <p className="text-ink-muted mt-8 text-sm">
+          An updated resume is being prepared. In the meantime, the Experience and Projects pages
+          cover the same ground.
+        </p>
+      )}
     </Container>
   );
 }
