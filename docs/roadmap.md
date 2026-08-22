@@ -118,13 +118,25 @@ and the filter costs zero JavaScript.
 
 ## Phase 6 — Database
 
-- [ ] Neon project; pooled + direct connection strings
-- [ ] `prisma/schema.prisma` mirroring the Phase 3 types
-- [ ] First migration
-- [ ] `prisma/seed.ts` importing `src/content/*`
+Split in two: everything that does not need a live database is done; the rest is
+blocked on a Neon connection string.
+
+- [x] `prisma/schema.prisma` mirroring the Phase 3 types (Prisma 7)
+- [x] `prisma.config.ts` — CLI config, takes the DIRECT url
+- [x] Prisma singleton in `src/lib/db.ts` — hot-reload safe, takes the POOLED url
+- [x] `prisma/seed.ts` importing `src/content/*`, idempotent via upsert
+- [x] `db:*` scripts; `prisma generate` wired into `npm run build`
+- [x] Generated client excluded from git, ESLint, and Prettier
+- [ ] **Blocked on Bidipta:** create a Neon project, put `DATABASE_URL` and
+      `DIRECT_URL` in `.env.local`
+- [ ] First migration (`npm run db:migrate`)
+- [ ] Seed (`npm run db:seed`)
 - [ ] **Swap query façade internals to Prisma — components untouched**
-- [ ] Prisma singleton (`lib/db.ts`), hot-reload safe
 - [ ] Cache invalidation strategy (this is Next 16; read the bundled docs first)
+
+> ⚠ Once the CMS exists in Phase 8, `npm run db:seed` will overwrite rows edited
+> through `/admin` with whatever is in `src/content/`. Before then it is the
+> source of truth; afterwards it is a reset button.
 
 ## Phase 7 — Authentication
 

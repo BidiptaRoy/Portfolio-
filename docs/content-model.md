@@ -36,10 +36,11 @@ Home and About copy is editable without a deploy.
 Project detail pages get the most design attention — they are what actually earns
 interviews.
 
-### `Tag`
+### ~~`Tag`~~ — not implemented
 
-`name`, `slug`, `kind: LANGUAGE | FRAMEWORK | TOOL | DOMAIN`. Shared by `Project` and
-`Skill`, so "React" is one row rather than two loose strings.
+Originally planned as a shared model normalizing technologies across projects and skills.
+`Project.tech` is a `String[]` instead. For seven projects and one editor, a join table
+does not pay for itself. See `docs/decisions/0006` for when to revisit.
 
 ### `Experience`
 
@@ -75,9 +76,11 @@ older resume is never lost.
 
 `platform`, `url`, `label`, `sortOrder`.
 
-## Seams — present in the schema, unused until later
+## Future models — NOT in the schema
 
-Empty tables cost nothing; retrofitting relations costs a migration and a query rewrite.
+Planned, but deliberately not created yet. The earlier claim that empty tables should exist
+up front was wrong for standalone models: adding one later is a single routine migration.
+See correction 1 in `docs/decisions/0006`.
 
 - **`Service`** — `slug`, `name`, `summary`, `description`, `category`, `areasServed[]`,
   `startingRate`, `status`, `sortOrder`, `referralLinkId?`

@@ -124,7 +124,12 @@ export interface ResumeVersion extends ContentMeta {
   fileUrl: string;
   /** The filename a visitor's browser saves it as. */
   downloadName: string;
-  updatedAt: YearMonth;
+  /**
+   * The month the resume itself was revised — distinct from the row's
+   * `updatedAt` timestamp, which records when the record was last edited.
+   * Conflating the two would show "updated this week" for a year-old PDF.
+   */
+  revisedAt: YearMonth;
   isCurrent: boolean;
 }
 

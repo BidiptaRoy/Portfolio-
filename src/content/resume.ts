@@ -20,7 +20,7 @@ export const resumeVersions: ResumeVersion[] = [
     label: "Resume — April 2026",
     fileUrl: "/resume/bidipta-roy-resume.pdf",
     downloadName: "Bidipta-Roy-Resume.pdf",
-    updatedAt: "2026-04",
+    revisedAt: "2026-04",
     isCurrent: true,
     status: "PUBLISHED",
     sortOrder: 0,

@@ -127,7 +127,7 @@ export const resumeVersionSchema = z.object({
   label: z.string().min(1),
   fileUrl: z.string().min(1),
   downloadName: z.string().min(1),
-  updatedAt: yearMonth,
+  revisedAt: yearMonth,
   isCurrent: z.boolean(),
 });
 

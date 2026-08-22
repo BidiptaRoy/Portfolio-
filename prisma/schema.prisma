@@ -1,0 +1,196 @@
+// Prisma schema — the source of truth for the data model.
+//
+// This mirrors src/types/content.ts. When the two disagree, this file wins and
+// the TypeScript types should be brought into line, because a migration has
+// already been applied to a real database by the time they diverge.
+//
+// Prisma 7 notes, which differ from most examples written for v6:
+//   - Connection URLs live in prisma.config.ts, NOT in the datasource block.
+//   - The client generates to src/generated/prisma (gitignored), not into
+//     node_modules. `prisma generate` runs as part of `npm run build`.
+//   - Queries go through the @prisma/adapter-pg driver adapter; see
+//     src/lib/db.ts.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums — kept in exact step with src/types/content.ts
+// ---------------------------------------------------------------------------
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ExperienceKind {
+  TECHNICAL
+  PROFESSIONAL
+  LEADERSHIP
+}
+
+enum EngagementType {
+  INTERNSHIP
+  EMPLOYMENT
+  CONTRACT
+  // Work found through a marketplace. The platform is recorded separately
+  // from the organization so it is never presented as an employer.
+  PLATFORM_ENGAGEMENT
+  VOLUNTEER
+  MEMBERSHIP
+}
+
+enum SkillCategory {
+  LANGUAGE
+  FRAMEWORK
+  DATABASE
+  TOOL
+  PRACTICE
+}
+
+enum SocialPlatform {
+  GITHUB
+  LINKEDIN
+  EMAIL
+}
+
+// ---------------------------------------------------------------------------
+// Content
+//
+// Dates that describe periods (a project's completion, a role's start) are
+// stored as "YYYY" or "YYYY-MM" strings rather than DateTime. They are not
+// instants: coercing "2025-11" to a timestamp invents a day and a timezone,
+// and reading it back in a negative offset rolls it to October. Row
+// timestamps, which ARE instants, use DateTime.
+// ---------------------------------------------------------------------------
+
+/// Singleton. Exactly one row, addressed by a fixed id.
+model Profile {
+  id           String   @id @default("singleton")
+  name         String
+  headline     String
+  shortBio     String
+  longBio      String[]
+  location     String
+  email        String
+  availability String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  summary     String
+  description String
+  role        String?
+  featured    Boolean  @default(false)
+  startedAt   String?
+  completedAt String?
+  /// Display names. Deliberately not a Tag relation — see docs/content-model.md.
+  tech        String[]
+  repoUrl     String?
+  liveUrl     String?
+  outcomes    String[]
+  challenges  String[]
+
+  status    PublishStatus @default(DRAFT)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+model Experience {
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  kind           ExperienceKind
+  engagementType EngagementType
+  title          String
+  /// The actual employer, client, or organization. Null for independent work.
+  organization   String?
+  /// e.g. "Taskrabbit" — rendered as "via Taskrabbit", never as an employer.
+  platform       String?
+  location       String?
+  startDate      String
+  endDate        String?
+  current        Boolean        @default(false)
+  summary        String
+  highlights     String[]
+  skills         String[]
+
+  status    PublishStatus @default(DRAFT)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, kind, sortOrder])
+}
+
+model Education {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  institution String
+  degree      String
+  field       String
+  location    String?
+  startDate   String
+  endDate     String?
+  expected    Boolean  @default(false)
+  highlights  String[]
+
+  status    PublishStatus @default(DRAFT)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+model Skill {
+  id       String        @id @default(cuid())
+  name     String        @unique
+  category SkillCategory
+
+  status    PublishStatus @default(DRAFT)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, category, sortOrder])
+}
+
+model SocialLink {
+  id       String         @id @default(cuid())
+  platform SocialPlatform @unique
+  label    String
+  url      String
+
+  status    PublishStatus @default(DRAFT)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model ResumeVersion {
+  id           String  @id @default(cuid())
+  label        String
+  fileUrl      String
+  downloadName String
+  /// The month the resume itself was revised — not the row timestamp.
+  revisedAt    String
+  isCurrent    Boolean @default(false)
+
+  status    PublishStatus @default(DRAFT)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}

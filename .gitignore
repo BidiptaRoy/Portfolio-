@@ -41,3 +41,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prisma — the client is generated from schema.prisma, so it is build output,
+# not source. `npm run build` regenerates it (see the build script).
+/src/generated/

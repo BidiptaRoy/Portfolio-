@@ -21,7 +21,7 @@ export default async function ResumePage() {
         level={1}
         eyebrow="Resume"
         title="Resume"
-        lead={resume ? `Last updated ${formatYearMonth(resume.updatedAt)}.` : undefined}
+        lead={resume ? `Last updated ${formatYearMonth(resume.revisedAt)}.` : undefined}
       />
 
       {resume ? (
