@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/server/actions/auth";
@@ -35,11 +37,21 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
             <span className="text-ink-muted text-xs">{session.user.email}</span>
           </div>
 
-          <form action={logout}>
-            <Button type="submit" variant="secondary" size="sm">
-              Sign out
-            </Button>
-          </form>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-ink-muted hover:text-accent text-sm transition-colors">
+              View site ↗
+            </Link>
+
+            <form action={logout}>
+              <Button type="submit" variant="secondary" size="sm">
+                Sign out
+              </Button>
+            </form>
+          </div>
+        </Container>
+
+        <Container className="border-line border-t py-2">
+          <AdminNav />
         </Container>
       </header>
 

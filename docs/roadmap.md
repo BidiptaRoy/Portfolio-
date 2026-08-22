@@ -4,7 +4,7 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Current phase: 7 — Authentication.**
+**Current phase: 8 — Admin CMS.** Projects are editable; the other entities follow.
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -174,11 +174,34 @@ That is Phase 10, and it is the largest remaining gap in the auth surface.
 
 ## Phase 8 — Admin CMS
 
-- [ ] Admin shell and navigation
-- [ ] CRUD for Project, Experience, Education, Skill, Profile
-- [ ] Server Actions: auth check → Zod parse → mutate
-- [ ] Draft/publish toggle; sort ordering
-- [ ] Revalidation on save
+Split in two so the pattern is proven on one entity before it is repeated.
+
+- [x] Admin shell, section navigation, sign-out
+- [x] Dashboard with counts that include drafts
+- [x] **Projects: full CRUD** — list, create, edit, delete, publish toggle
+- [x] Server Actions: `requireAdmin()` → Zod parse → mutate → revalidate
+- [x] Draft/publish toggle and sort ordering
+- [x] `revalidatePath` on every mutation, including `/projects/[slug]` with
+      `type: "page"` and `/sitemap.xml`
+- [x] **Layer 3 verified** — see below
+- [ ] Experience, Education, Skills, Profile modules — same pattern repeated
+
+### Layer 3 verification
+
+The security claim that matters is that a Server Action cannot be invoked
+without a session. Tested rather than asserted: action IDs were extracted from
+`.next/server/server-reference-manifest.json` and POSTed to `/admin/projects`
+against a production build with no session cookie.
+
+|                                       |                              |
+| ------------------------------------- | ---------------------------- |
+| 4 action invocations, unauthenticated | all returned **307**         |
+| Project rows before                   | 7, all PUBLISHED             |
+| Project rows after                    | 7, all PUBLISHED — unchanged |
+
+Nothing was published, unpublished, or deleted. Repeat this test if the auth
+flow is ever refactored; it is the only check that exercises the boundary the
+proxy cannot see.
 
 ## Phase 9 — Media and contact
 

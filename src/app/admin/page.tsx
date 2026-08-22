@@ -1,39 +1,27 @@
+import Link from "next/link";
+
 import { auth } from "@/auth";
 import { Container } from "@/components/layout/container";
+import { buttonStyles } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { getEducation } from "@/server/queries/education";
-import { getExperience } from "@/server/queries/experience";
-import { getProjects } from "@/server/queries/projects";
-import { getSkills } from "@/server/queries/skills";
+import { getAdminCounts } from "@/server/queries/admin";
 
-/**
- * Placeholder dashboard. The editing interface is Phase 8.
- *
- * It shows live counts rather than static text so that it proves something
- * real: that an authenticated session can reach the database through the same
- * façade the public site uses.
- */
 export default async function AdminPage() {
   const session = await auth();
 
   // Layer 2 again, at the page level. The layout already checked, but a page
-  // should not depend on a parent having done so — layouts and pages can be
-  // rendered independently.
+  // should not rely on a parent having done so — layouts and pages can render
+  // independently.
   if (!session?.user) return null;
 
-  const [projects, experience, education, skills] = await Promise.all([
-    getProjects(),
-    getExperience(),
-    getEducation(),
-    getSkills(),
-  ]);
+  const counts = await getAdminCounts();
 
-  const counts = [
-    { label: "Projects", value: projects.length },
-    { label: "Experience", value: experience.length },
-    { label: "Education", value: education.length },
-    { label: "Skills", value: skills.length },
+  const tiles = [
+    { label: "Projects", value: counts.projects, href: "/admin/projects" },
+    { label: "Experience", value: counts.experience, href: null },
+    { label: "Education", value: counts.education, href: null },
+    { label: "Skills", value: counts.skills, href: null },
   ];
 
   return (
@@ -42,22 +30,40 @@ export default async function AdminPage() {
         level={1}
         eyebrow="Dashboard"
         title="Content"
-        lead="Editing arrives in Phase 8. These counts are read live from the database."
+        lead="Counts include drafts. Editing for the remaining sections lands next."
       />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {counts.map((item) => (
-          <Card key={item.label}>
-            <CardTitle>{item.value}</CardTitle>
-            <CardBody className="mt-1">{item.label}</CardBody>
-          </Card>
-        ))}
+        {tiles.map((tile) => {
+          const card = (
+            <Card className="h-full">
+              <CardTitle>{tile.value}</CardTitle>
+              <CardBody className="mt-1">{tile.label}</CardBody>
+            </Card>
+          );
+
+          return tile.href ? (
+            <Link key={tile.label} href={tile.href} className="rounded-lg">
+              {card}
+            </Link>
+          ) : (
+            <div key={tile.label}>{card}</div>
+          );
+        })}
       </div>
 
-      <p className="text-ink-muted mt-8 text-sm">
-        Counts reflect published records only, because the dashboard reads through the same façade
-        as the public site. Phase 8 adds queries that include drafts.
-      </p>
+      {counts.drafts > 0 ? (
+        <p className="text-ink-muted mt-6 text-sm">
+          {counts.drafts} project{counts.drafts === 1 ? "" : "s"} in draft — not visible on the
+          public site.
+        </p>
+      ) : null}
+
+      <div className="mt-8">
+        <Link href="/admin/projects" className={buttonStyles({ variant: "secondary" })}>
+          Manage projects
+        </Link>
+      </div>
     </Container>
   );
 }

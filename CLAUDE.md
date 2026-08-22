@@ -22,7 +22,8 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 7 (Authentication). Phases 1–6 complete. See `docs/roadmap.md`.
+- **Current phase:** Phase 8 (Admin CMS). Phases 1–7 complete; Projects are editable at
+  `/admin/projects`. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -145,9 +146,17 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
 - **Server Components by default.** Add `"use client"` only when a component needs state,
   effects, or browser APIs — and push it as far down the tree as possible.
 - **Never fetch data in a component.** Always go through `src/server/queries/`.
-- **Every Server Action** _(from Phase 8)_ starts by verifying the session, then Zod-parses
-  its input, then mutates. In that order, every time. A Server Action is a public HTTP
-  endpoint with nicer syntax — middleware does not protect it.
+- **Every Server Action** starts with `await requireAdmin()` from `src/lib/auth-guard.ts`,
+  then Zod-parses its input, then mutates, then revalidates. In that order, every time.
+  A Server Action compiles to a public POST endpoint — the proxy never sees it.
+- **`"use server"` files may only export async functions.** Shared types and constants
+  (form state, initial values) live in `src/lib/validation/forms.ts`. Exporting a plain
+  object from an actions file fails the build.
+- **Admin reads that include drafts live in `src/server/queries/admin.ts`**, never in the
+  public façade files. The filename is the guard against a public page importing one.
+- **Every mutation must revalidate.** A write to the database is invisible until the
+  affected paths are invalidated — including `/sitemap.xml`, and `/projects/[slug]` with
+  `type: "page"` for dynamic segments.
 - **Every content model** carries `status: DRAFT | PUBLISHED`, `sortOrder`, and timestamps.
   Public queries filter to `PUBLISHED`.
 - **Validate on the server regardless of client validation.** Client validation is UX.
