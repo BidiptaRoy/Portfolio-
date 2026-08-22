@@ -20,11 +20,11 @@ export function SiteNav() {
   const pathname = usePathname();
 
   return (
-    <nav
-      aria-label="Primary"
-      className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:overflow-visible sm:px-0"
-    >
-      <ul className="flex items-center gap-5 whitespace-nowrap sm:gap-6">
+    <nav aria-label="Primary" className="min-w-0">
+      {/* Wraps rather than scrolls horizontally. A scrolling row hides links
+          off-screen with no affordance that they exist; two short rows on a
+          narrow phone is worse-looking and better-working. */}
+      <ul className="flex flex-wrap items-center gap-x-5 sm:gap-x-6">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -34,19 +34,23 @@ export function SiteNav() {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "relative block py-1 text-sm transition-colors",
+                  // min-h-11 is 44px — Apple's minimum comfortable touch target.
+                  // Relaxed back to a tight row once there is a pointer.
+                  "flex min-h-11 items-center text-sm transition-colors sm:min-h-0 sm:py-1",
                   isActive ? "text-ink" : "text-ink-muted hover:text-ink",
                 )}
               >
-                {item.label}
-                {/* Static accent rule marking the current section. */}
-                <span
-                  aria-hidden
-                  className={cn(
-                    "bg-accent absolute inset-x-0 -bottom-0.5 h-0.5",
-                    isActive ? "block" : "hidden",
-                  )}
-                />
+                {/* The underline hugs the text, not the enlarged tap target. */}
+                <span className="relative">
+                  {item.label}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "bg-accent absolute inset-x-0 -bottom-1.5 h-0.5",
+                      isActive ? "block" : "hidden",
+                    )}
+                  />
+                </span>
               </Link>
             </li>
           );

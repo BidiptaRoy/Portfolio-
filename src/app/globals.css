@@ -104,6 +104,15 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+
+    /* A long unbroken string (a URL, a package name) must wrap instead of
+       forcing the whole page to scroll sideways on a narrow phone. */
+    overflow-wrap: break-word;
+
+    /* iOS paints an opaque grey box over tapped links by default. Replaced
+       with a warm tint rather than removed outright — killing it entirely
+       makes taps feel unresponsive, since phones have no hover state. */
+    -webkit-tap-highlight-color: color-mix(in srgb, var(--accent) 18%, transparent);
   }
 
   /* Headings carry the editorial voice. Fraunces is optically large, so it

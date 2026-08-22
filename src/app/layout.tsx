@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -20,6 +20,18 @@ const fraunces = Fraunces({
   variable: "--font-fraunces",
   display: "swap",
 });
+
+// Declared explicitly rather than relying on the framework default, and
+// deliberately WITHOUT `viewportFit: "cover"`: with the default, iOS keeps
+// content clear of the notch and home indicator automatically. Opting into
+// edge-to-edge would mean handling every safe-area inset by hand for no gain
+// on a layout that has no fixed or full-bleed chrome.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Not `maximumScale: 1` — capping zoom breaks pinch-to-zoom for anyone who
+  // needs it, and iOS ignores it anyway. Never add it.
+};
 
 // Full metadata, Open Graph images, and JSON-LD are Phase 5 — see docs/roadmap.md.
 export const metadata: Metadata = {
