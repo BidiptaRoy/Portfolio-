@@ -4,7 +4,7 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Current phase: 5 — SEO, accessibility, performance.**
+**Current phase: 6 — Database.**
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -100,10 +100,18 @@ and the filter costs zero JavaScript.
 
 ## Phase 5 — SEO, accessibility, performance
 
-- [ ] Per-page metadata; Open Graph image generation
-- [ ] `sitemap.ts`, `robots.ts`, JSON-LD Person schema
-- [ ] `next/image` throughout
-- [ ] Lighthouse ≥ 95; axe audit; full keyboard navigation pass
+- [x] Per-page metadata with a title template and per-page canonical URLs
+- [x] Generated Open Graph images — one for the site, one per project
+- [x] `sitemap.ts` (13 URLs, generated from the façade) and `robots.ts`
+- [x] JSON-LD `Person` schema on the home page
+- [x] Heading hierarchy audited across all seven page types; fixed a
+      skipped level on `/projects` (h1 → h3) by making `ProjectCard`'s
+      heading level configurable
+- [ ] `next/image` throughout — no images exist yet; lands with Phase 9
+- [ ] **Lighthouse ≥ 95 and an axe audit — NOT RUN.** Both need a real
+      browser, which is not available in this environment. Must be run
+      manually (Chrome DevTools → Lighthouse) before launch.
+- [ ] Full keyboard navigation pass — needs a human at a keyboard
 
 > **Milestone: live portfolio deployed.** Everything after this point is the CMS. If
 > momentum ever stops here, the result is still a finished, deployed portfolio.

@@ -7,8 +7,9 @@ import { formatYearMonth } from "@/lib/format";
 import { getCurrentResume } from "@/server/queries/resume";
 
 export const metadata: Metadata = {
-  title: "Resume · Bidipta Roy",
+  title: "Resume",
   description: "Education, experience, projects, and skills in one page.",
+  alternates: { canonical: "/resume" },
 };
 
 export default async function ResumePage() {

@@ -6,8 +6,9 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { getProfile, getSocialLinks } from "@/server/queries/profile";
 
 export const metadata: Metadata = {
-  title: "Contact · Bidipta Roy",
+  title: "Contact",
   description: "Get in touch about engineering roles, collaboration, or professional services.",
+  alternates: { canonical: "/contact" },
 };
 
 export default async function ContactPage() {

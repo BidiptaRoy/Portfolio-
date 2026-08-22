@@ -13,7 +13,14 @@ import type { Project } from "@/types/content";
  * target is easier to hit on a phone. External repo and demo links live on
  * the detail page, where they are not competing with the card's own target.
  */
-export function ProjectCard({ project }: { project: Project }) {
+export function ProjectCard({
+  project,
+  headingLevel = "h3",
+}: {
+  project: Project;
+  /** Pass "h2" when the grid sits directly under the page h1. */
+  headingLevel?: "h2" | "h3";
+}) {
   return (
     <Link href={`/projects/${project.slug}`} className="group block rounded-lg">
       <Card
@@ -26,7 +33,9 @@ export function ProjectCard({ project }: { project: Project }) {
               {formatYearMonth(project.completedAt)}
             </p>
           ) : null}
-          <CardTitle className="group-hover:text-accent">{project.title}</CardTitle>
+          <CardTitle as={headingLevel} className="group-hover:text-accent">
+            {project.title}
+          </CardTitle>
         </div>
 
         <CardBody className="flex-1">{project.summary}</CardBody>

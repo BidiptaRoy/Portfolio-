@@ -10,8 +10,9 @@ import { getProfile, getSocialLinks } from "@/server/queries/profile";
 import { getSkillsByCategory } from "@/server/queries/skills";
 
 export const metadata: Metadata = {
-  title: "About · Bidipta Roy",
+  title: "About",
   description: "Background, current work, and how I approach building software.",
+  alternates: { canonical: "/about" },
 };
 
 export default async function AboutPage() {

@@ -22,11 +22,18 @@ export async function generateMetadata({
   const { slug } = await params;
   const project = await getProjectBySlug(slug);
 
-  if (!project) return { title: "Project not found · Bidipta Roy" };
+  if (!project) return { title: "Project not found" };
 
   return {
-    title: `${project.title} · Bidipta Roy`,
+    title: project.title,
     description: project.summary,
+    alternates: { canonical: `/projects/${project.slug}` },
+    openGraph: {
+      type: "article",
+      title: project.title,
+      description: project.summary,
+      url: `/projects/${project.slug}`,
+    },
   };
 }
 

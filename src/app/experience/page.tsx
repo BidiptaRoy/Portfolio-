@@ -6,9 +6,10 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { getExperienceBySection } from "@/server/queries/experience";
 
 export const metadata: Metadata = {
-  title: "Experience · Bidipta Roy",
+  title: "Experience",
   description:
     "Technical work, professional roles, and leadership positions held at Boston University and beyond.",
+  alternates: { canonical: "/experience" },
 };
 
 export default async function ExperiencePage() {

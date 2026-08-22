@@ -8,9 +8,12 @@ import { cn } from "@/lib/utils";
 import { getProjects, getProjectTechnologies } from "@/server/queries/projects";
 
 export const metadata: Metadata = {
-  title: "Projects · Bidipta Roy",
+  title: "Projects",
   description:
     "Full-stack applications, data platforms, and hackathon projects — what was built, and what came of it.",
+  // Always the unfiltered page. Without this every ?tech= permutation would
+  // be a separate indexable URL competing with the others for the same content.
+  alternates: { canonical: "/projects" },
 };
 
 /**
@@ -97,7 +100,10 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/project
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {visible.map((project) => (
-          <ProjectCard key={project.slug} project={project} />
+          // h2, not the default h3: this grid sits directly under the page h1
+          // with no section heading between, and skipping a level breaks
+          // heading navigation for screen reader users.
+          <ProjectCard key={project.slug} project={project} headingLevel="h2" />
         ))}
       </div>
     </Container>

@@ -22,8 +22,7 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 5 (SEO, a11y, performance). Phases 1–4 complete.
-  See `docs/roadmap.md`.
+- **Current phase:** Phase 6 (Database). Phases 1–5 complete. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -179,8 +178,12 @@ the same thing, and it is correct.
 
 ## Common workflows
 
-**Add a public page** → create `src/app/<route>/page.tsx`, export `metadata`, read data via
-`src/server/queries/`, add the route to the sitemap when one exists.
+**Add a public page** → create `src/app/<route>/page.tsx`, export `metadata` with a short
+`title` (the root layout appends the site name) and an `alternates.canonical`, read data via
+`src/server/queries/`, and add the route to `src/app/sitemap.ts`.
+
+**Check headings before shipping a page** → the document must go h1 → h2 → h3 with no
+skipped levels. `ProjectCard` and `CardTitle` take a heading level for exactly this reason.
 
 **Add a new content type** → type in `src/types/` → Zod schema in `src/lib/validation/` →
 content module in `src/content/` → query functions in `src/server/queries/` → components.

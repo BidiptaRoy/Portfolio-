@@ -2,25 +2,36 @@ import Link from "next/link";
 
 import { Container } from "@/components/layout/container";
 import { ExperienceEntry } from "@/components/portfolio/experience-entry";
+import { PersonJsonLd } from "@/components/portfolio/person-json-ld";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { buttonStyles } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Rule } from "@/components/ui/rule";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { getSiteUrl } from "@/lib/site";
+import { getEducation } from "@/server/queries/education";
 import { getCurrentExperience, getExperienceByKind } from "@/server/queries/experience";
-import { getProfile } from "@/server/queries/profile";
+import { getProfile, getSocialLinks } from "@/server/queries/profile";
 import { getFeaturedProjects } from "@/server/queries/projects";
 
 export default async function HomePage() {
-  const [profile, current, featured, technical] = await Promise.all([
+  const [profile, current, featured, technical, education, socials] = await Promise.all([
     getProfile(),
     getCurrentExperience(),
     getFeaturedProjects(3),
     getExperienceByKind("TECHNICAL"),
+    getEducation(),
+    getSocialLinks(),
   ]);
 
   return (
     <Container className="py-16 sm:py-24">
+      <PersonJsonLd
+        profile={profile}
+        education={education}
+        socials={socials}
+        siteUrl={getSiteUrl()}
+      />
       {/* Hero — answers "should I keep reading?" in about five seconds. */}
       <section className="flex flex-col gap-6">
         <Eyebrow>Computer Science · Boston University</Eyebrow>

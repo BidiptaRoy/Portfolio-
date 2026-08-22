@@ -4,6 +4,7 @@ import { Fraunces, Inter } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SkipLink } from "@/components/layout/skip-link";
+import { getSiteUrl, SITE_NAME } from "@/lib/site";
 
 import "./globals.css";
 
@@ -33,10 +34,46 @@ export const viewport: Viewport = {
   // needs it, and iOS ignores it anyway. Never add it.
 };
 
-// Full metadata, Open Graph images, and JSON-LD are Phase 5 — see docs/roadmap.md.
+const siteUrl = getSiteUrl();
+
+const description =
+  "Computer Science student at Boston University building full-stack applications — projects, experience, and how I approach engineering.";
+
 export const metadata: Metadata = {
-  title: "Bidipta Roy",
-  description: "Software engineer and Computer Science student at Boston University.",
+  // Required for Open Graph images and canonical links to resolve to absolute
+  // URLs. Without it, relative metadata URLs are emitted as-is and social
+  // previews break.
+  metadataBase: new URL(siteUrl),
+
+  // Pages set a short `title`; the template appends the site name, so no page
+  // has to repeat it and the suffix can never drift between pages.
+  title: {
+    default: `${SITE_NAME} — Software Engineer`,
+    template: `%s · ${SITE_NAME}`,
+  },
+  description,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: siteUrl }],
+  creator: SITE_NAME,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Software Engineer`,
+    description,
+    url: siteUrl,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Software Engineer`,
+    description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
