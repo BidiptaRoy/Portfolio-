@@ -4,7 +4,7 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Current phase: 4 — Public portfolio.**
+**Current phase: 5 — SEO, accessibility, performance.**
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -84,9 +84,15 @@ Outstanding content gaps — these need Bidipta, not invention:
 - [x] About — narrative, education, skills, social links, services pointer
 - [x] Experience — three sections from `Experience.kind`; empty ones are omitted
 - [x] Resume — download, new-tab, and inline preview; degrades when unpublished
-- [ ] Projects index with technology filtering
-- [ ] Project detail `[slug]` — the pages that actually earn interviews
-- [ ] Contact (static; form arrives in Phase 9)
+- [x] Projects index with technology filtering, driven by `?tech=` in the URL
+- [x] Project detail `[slug]` — prerendered per project; Outcomes, Challenges,
+      and My role are omitted entirely when empty
+- [x] Contact — mailto and social links; the form is Phase 9
+
+**Phase 4 complete.** `/projects` is the only dynamic route, because reading
+`searchParams` opts out of prerendering. Accepted deliberately: a shareable
+`/projects?tech=Python` URL is worth more than prerendering a seven-item list,
+and the filter costs zero JavaScript.
 
 > The resume PDF currently published has a typo in its contact email
 > (`bidiptar@bu.com` should be `bidiptar@bu.edu`). Set `status` to `"DRAFT"` in

@@ -22,7 +22,8 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 4 (Public portfolio). Phases 1–3 complete. See `docs/roadmap.md`.
+- **Current phase:** Phase 5 (SEO, a11y, performance). Phases 1–4 complete.
+  See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
