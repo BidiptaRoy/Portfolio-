@@ -4,7 +4,7 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Current phase: 2 — Design system.**
+**Current phase: 3 — Content contracts.**
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -39,12 +39,20 @@ run `next typegen` first or it fails on a fresh clone. Both are documented in `C
 
 Visual identity and layout shell. **Timeboxed** — this is where portfolio projects stall.
 
-- [ ] Design tokens as CSS custom properties: color, type scale, spacing, radii
-- [ ] Typeface selection (one pair, restrained)
-- [ ] Dark mode via tokens
-- [ ] `components/ui/` primitives: Button, Card, Badge, Link
-- [ ] `components/layout/`: Header, Footer, Container, SkipLink
-- [ ] Responsive breakpoints, accessibility baseline (focus states, contrast)
+- [x] Design tokens as CSS custom properties — "Editorial Oat", contrast measured
+- [x] Typefaces: Fraunces (serif headings) + Inter (sans body)
+- [x] Warm dark theme via `prefers-color-scheme`, tokens only, no toggle
+- [x] `components/ui/`: Button, Card, Badge, Eyebrow, Rule, SectionHeading
+- [x] `components/layout/`: Container, SiteHeader, SiteNav, SiteFooter, SkipLink
+- [x] Responsive layout, focus states, skip link, reduced-motion support
+- [x] Stub pages for the five nav routes so the shell is navigable
+
+**Phase 2 complete.** Decisions recorded in `docs/decisions/0005`. Notably: no animation
+library — it works against the "runs on any machine" requirement, and the brief asked for
+static detailing. The only client component is `SiteNav`.
+
+> Remaining for later: real page content is Phase 4, and the stub pages still say
+> "This section is being written."
 
 ## Phase 3 — Content contracts
 

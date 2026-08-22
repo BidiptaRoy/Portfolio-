@@ -22,7 +22,7 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 2 (Design system). Phase 1 complete. See `docs/roadmap.md`.
+- **Current phase:** Phase 3 (Content contracts). Phases 1–2 complete. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -86,9 +86,13 @@ src/
     layout.tsx          Root layout: fonts, <html lang>, base metadata
     globals.css         Tailwind import + design tokens as CSS custom properties
   components/
-    ui/                 Generic primitives (Button, Card, Badge). No domain knowledge.
-    layout/             Header, Footer, Container, SkipLink
-    portfolio/          Domain components (ProjectCard, ExperienceTimeline)
+    ui/                 Primitives: Button, Card, Badge, Eyebrow, Rule, SectionHeading.
+                        No domain knowledge.
+    layout/             Container, SiteHeader, SiteNav, SiteFooter, SkipLink
+    portfolio/          Domain components (ProjectCard, ExperienceTimeline) — Phase 4
+  lib/
+    navigation.ts       Primary nav, single source for header and footer
+    utils.ts            cn() — clsx + tailwind-merge
   content/              Typed content modules — the data source until Phase 6,
                         then the input to prisma/seed.ts
   server/
@@ -119,8 +123,16 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
   Public queries filter to `PUBLISHED`.
 - **Validate on the server regardless of client validation.** Client validation is UX.
 - **No `dangerouslySetInnerHTML`** except for vetted JSON-LD. Markdown must be sanitized.
-- **Design tokens are CSS custom properties** in `globals.css`. Do not hardcode hex colors
-  in components — that is what makes a site look like a template.
+- **Design tokens are CSS custom properties** in `globals.css`. Never write a hex value in a
+  component — use `bg-page`, `text-ink`, `text-ink-muted`, `border-line`, `bg-accent`.
+- **Never add a color without measuring its contrast** against the theme it sits on. The
+  palette is built for outdoor legibility; an unmeasured color silently breaks that. There
+  are exactly two text colors (`ink`, `ink-muted`) and adding a third lighter one is how
+  accessible palettes stop being accessible.
+- **Section detailing comes from components,** not hand-placed markup: `SectionHeading`,
+  `Eyebrow`, `Rule`, `Card`. That is what keeps the rhythm consistent across pages.
+- **No animation library.** See `docs/decisions/0005`. CSS transitions only, and the global
+  `prefers-reduced-motion` block stays.
 - **Terminology (non-negotiable):** Taskrabbit is a _platform through which services are
   provided_, never an employer. Render as "via Taskrabbit". The data model enforces this
   with a `platform` field separate from `organization`.
