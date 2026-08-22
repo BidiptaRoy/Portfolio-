@@ -1,4 +1,4 @@
-import { projectSchema } from "@/lib/validation/content";
+import { assertUniqueSlugs, projectSchema } from "@/lib/validation/content";
 import type { Project } from "@/types/content";
 
 /**
@@ -7,12 +7,36 @@ import type { Project } from "@/types/content";
  * Migrated from Bidipta's previous site. Summaries and tech stacks are his;
  * the previous site's inconsistent project numbering was dropped.
  *
- * NOTE: `outcomes` and `challenges` are intentionally empty. Those are the
- * fields that make a project detail page worth reading — what went wrong,
- * what you decided, what resulted — and they cannot be invented. They are
- * filled in from Bidipta's own account before the detail pages ship.
+ * `outcomes` and `challenges` are populated only where something real
+ * happened. Bidipta's decision, and the right one: filler in those fields is
+ * worse than leaving them blank, because a reader who spots one invented
+ * "challenge" discounts everything else on the page. Detail pages omit the
+ * sections entirely when they are empty.
  */
 export const projects: Project[] = [
+  {
+    slug: "ecoroute",
+    title: "EcoRoute",
+    summary:
+      "A sensor-driven dashboard mapping 84 waste bins across BU's campus to optimize collection routes and bin placement.",
+    description:
+      "Built with BU's Team Sustainability to replace guesswork in campus waste collection. Sensor readings from 84 Big Belly bins are combined with City of Boston open data to map every bin, identify hotspots that overflow, and recommend better placement based on foot traffic. A hotspot algorithm drives the collection-timing recommendations, and NextAuth.js gates the dashboard so only BU Sustainability staff can see operational data.",
+    role: "Team lead — organized a team of five, delegating dashboard development to two software engineers and the data pipeline to three data scientists, and coordinating the handoffs between them",
+    featured: true,
+    startedAt: null,
+    completedAt: "2026-02",
+    tech: ["Next.js", "NextAuth.js", "SQLite", "Data Visualization", "Vercel"],
+    repoUrl: null,
+    liveUrl: "https://bin-there-done-that-green.vercel.app/",
+    outcomes: [
+      "First place in the Environmental track and second overall at the 2026 BU Civics Hackathon",
+      "Delivered a working product on deadline with a team of five across two disciplines",
+      "Cleaned raw CSV feeds from the City of Boston open data portal and BU's bin sensor network into a queryable SQLite database",
+    ],
+    challenges: [
+      "Deploying the live feature went wrong on the day and was not resolved until minutes before the final presentation — the demo went out on a build that had only just started working.",
+    ],
+  },
   {
     slug: "spotter",
     title: "Spotter",
@@ -36,12 +60,12 @@ export const projects: Project[] = [
     summary:
       "A full-stack Brazilian Jiu Jitsu learning app with 19+ technique modules, live quiz polling, and discussion.",
     description:
-      "A learning application for no-gi Brazilian Jiu Jitsu, covering more than nineteen technique modules across six categories. Includes live quiz polling and a comment section so training partners can discuss techniques alongside the material.",
+      "A learning application for no-gi Brazilian Jiu Jitsu, covering more than nineteen technique modules across six categories. RESTful endpoints back a real-time quiz with live vote aggregation, and a comment system lets training partners discuss techniques alongside the material. MongoDB Atlas stores profiles and comments behind secured API routes; the frontend deploys to Vercel through a CI/CD pipeline with the backend on a Node.js server.",
     role: "Full-stack — data model, API, and interface",
     featured: true,
     startedAt: null,
     completedAt: "2025-11",
-    tech: ["React", "Node.js", "Express", "MongoDB", "Tailwind CSS"],
+    tech: ["React", "Node.js", "Express", "MongoDB", "Tailwind CSS", "Vercel"],
     repoUrl: null,
     liveUrl: "https://bjj-trainer-j37ht700o-bidipta-roys-projects.vercel.app/",
     outcomes: [],
@@ -61,23 +85,6 @@ export const projects: Project[] = [
     tech: ["Python", "GeoPandas", "Folium", "Leaflet.js", "Pandas"],
     repoUrl: null,
     liveUrl: "https://atularavinddas.github.io/NEWISE_GIS/",
-    outcomes: [],
-    challenges: [],
-  },
-  {
-    slug: "ecoroute",
-    title: "EcoRoute",
-    summary:
-      "Maps and visualizes waste bins across BU's three campuses to improve pickup timing and sustainability operations.",
-    description:
-      "Maps every belly bin across Boston University's three campuses and visualizes them so collection routes and pickup timing can be planned against real placement data rather than assumption.",
-    role: null,
-    featured: false,
-    startedAt: null,
-    completedAt: "2026",
-    tech: ["Next.js", "Maps API", "Data Visualization", "Vercel"],
-    repoUrl: null,
-    liveUrl: "https://bin-there-done-that-green.vercel.app/",
     outcomes: [],
     challenges: [],
   },
@@ -135,3 +142,5 @@ export const projects: Project[] = [
 ].map((project, index) =>
   projectSchema.parse({ ...project, status: "PUBLISHED", sortOrder: index }),
 );
+
+assertUniqueSlugs(projects, "project");

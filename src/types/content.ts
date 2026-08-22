@@ -52,9 +52,14 @@ export interface Project extends ContentMeta {
 
 /**
  * Which section of the Experience page an entry belongs to.
- * Drives presentation only; both kinds get identical visual treatment.
+ * Drives grouping only; every kind gets identical visual treatment.
+ *
+ * LEADERSHIP mirrors the "Activities and Leadership" section of Bidipta's
+ * resume. It exists so an elected club office is not filed as employment,
+ * which would be inaccurate in both directions — it overstates the working
+ * relationship and understates the responsibility.
  */
-export type ExperienceKind = "TECHNICAL" | "PROFESSIONAL";
+export type ExperienceKind = "TECHNICAL" | "PROFESSIONAL" | "LEADERSHIP";
 
 /**
  * The nature of the working relationship.

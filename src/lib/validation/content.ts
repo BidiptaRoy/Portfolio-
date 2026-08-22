@@ -4,14 +4,42 @@ import { z } from "zod";
  * Runtime schemas for every content entity.
  *
  * These earn their keep three times over the life of the project:
- *   1. Now — content modules are parsed at import, so a typo in a slug or a
- *      malformed date fails the build instead of shipping.
+ *   1. Now — content modules parse themselves at import.
  *   2. Phase 6 — the same schemas validate `prisma/seed.ts` input.
  *   3. Phase 8 — the admin forms and every Server Action parse with these.
  *
- * Keep them in step with `src/types/content.ts`. The `satisfies` checks in
- * `src/content/*` will complain if the two drift apart.
+ * Keep them in step with `src/types/content.ts`.
+ *
+ * ⚠ IMPORTANT LIMITATION, verified by planting a duplicate slug and watching
+ * the build pass: these checks run at MODULE IMPORT, so they only fire for
+ * content that a rendered page actually reaches. A collection no page imports
+ * is never evaluated, and therefore never validated.
+ *
+ * Phase 4 wires every collection into a page, which closes most of the gap.
+ * The real fix is a test that imports all content unconditionally — scheduled
+ * for Phase 10. Until then, a green build does NOT mean the content is valid.
  */
+
+/**
+ * Asserts every slug in a collection is unique, and returns the collection.
+ *
+ * The per-item schemas cannot catch this: each duplicate is individually
+ * valid. But two entries sharing a slug means two entries sharing a URL, and
+ * `getBySlug` silently returns whichever sorts first — a bug that ships
+ * quietly and is confusing to track down. Throwing here fails the build.
+ */
+export function assertUniqueSlugs<T extends { slug: string }>(items: T[], label: string): T[] {
+  const seen = new Set<string>();
+
+  for (const item of items) {
+    if (seen.has(item.slug)) {
+      throw new Error(`Duplicate ${label} slug: "${item.slug}". Slugs must be unique.`);
+    }
+    seen.add(item.slug);
+  }
+
+  return items;
+}
 
 /** "2025" or "2025-11". Year-only is allowed on purpose — see YearMonth. */
 const yearMonth = z.string().regex(/^\d{4}(-(0[1-9]|1[0-2]))?$/, "Expected YYYY or YYYY-MM");
@@ -47,7 +75,7 @@ export const experienceSchema = z
   .object({
     ...contentMeta,
     slug,
-    kind: z.enum(["TECHNICAL", "PROFESSIONAL"]),
+    kind: z.enum(["TECHNICAL", "PROFESSIONAL", "LEADERSHIP"]),
     engagementType: z.enum([
       "INTERNSHIP",
       "EMPLOYMENT",

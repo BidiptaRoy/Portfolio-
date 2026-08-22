@@ -10,11 +10,12 @@ import type { Skill } from "@/types/content";
  * real work is worth far more than a long one they cannot.
  */
 export const skills: Skill[] = [
+  { name: "Java", category: "LANGUAGE" },
   { name: "Python", category: "LANGUAGE" },
   { name: "JavaScript", category: "LANGUAGE" },
   { name: "TypeScript", category: "LANGUAGE" },
-  { name: "Java", category: "LANGUAGE" },
   { name: "C", category: "LANGUAGE" },
+  { name: "SQL", category: "LANGUAGE" },
   { name: "HTML/CSS", category: "LANGUAGE" },
 
   { name: "React", category: "FRAMEWORK" },
@@ -23,16 +24,22 @@ export const skills: Skill[] = [
   { name: "Express", category: "FRAMEWORK" },
   { name: "Flask", category: "FRAMEWORK" },
   { name: "Tailwind CSS", category: "FRAMEWORK" },
+  { name: "NextAuth.js", category: "FRAMEWORK" },
 
   { name: "MongoDB", category: "DATABASE" },
   { name: "SQLite", category: "DATABASE" },
+  { name: "BerkeleyDB", category: "DATABASE" },
 
   { name: "Git", category: "TOOL" },
+  { name: "Docker", category: "TOOL" },
+  { name: "AWS", category: "TOOL" },
   { name: "Vercel", category: "TOOL" },
+  { name: "Jupyter Notebooks", category: "TOOL" },
   { name: "Pandas", category: "TOOL" },
   { name: "GeoPandas", category: "TOOL" },
 
   { name: "REST API design", category: "PRACTICE" },
   { name: "Authentication (JWT)", category: "PRACTICE" },
+  { name: "CI/CD", category: "PRACTICE" },
   { name: "UI/UX Design", category: "PRACTICE" },
 ].map((skill, index) => skillSchema.parse({ ...skill, status: "PUBLISHED", sortOrder: index }));

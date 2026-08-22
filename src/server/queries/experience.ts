@@ -24,15 +24,30 @@ export async function getExperienceByKind(kind: ExperienceKind): Promise<Experie
 export async function getExperienceBySection(): Promise<{
   technical: Experience[];
   professional: Experience[];
+  leadership: Experience[];
 }> {
   const all = published(experience);
   return {
     technical: all.filter((entry) => entry.kind === "TECHNICAL"),
     professional: all.filter((entry) => entry.kind === "PROFESSIONAL"),
+    leadership: all.filter((entry) => entry.kind === "LEADERSHIP"),
   };
 }
 
-/** The current role, if any — used for the "currently" line on the home page. */
+/**
+ * The single role to headline on the home page.
+ *
+ * Several roles can be current at once — a term-time internship, a seasonal
+ * coaching job, and an elected club office can all be live in the same month.
+ * Technical work is what the primary audience is here for, so it wins; only
+ * if there is none does this fall back to any current role.
+ */
 export async function getCurrentExperience(): Promise<Experience | null> {
-  return published(experience).find((entry) => entry.current) ?? null;
+  const current = published(experience).filter((entry) => entry.current);
+  return current.find((entry) => entry.kind === "TECHNICAL") ?? current[0] ?? null;
+}
+
+/** Every current role — for the About page, where all of them are relevant. */
+export async function getCurrentExperiences(): Promise<Experience[]> {
+  return published(experience).filter((entry) => entry.current);
 }

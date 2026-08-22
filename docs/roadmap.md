@@ -134,6 +134,11 @@ Outstanding content gaps — these need Bidipta, not invention:
 ## Phase 10 — Testing and hardening
 
 - [ ] Vitest units (validation, query façade)
+- [ ] **Content validation test** — import every collection unconditionally and
+      assert it parses. Content schemas currently run only at module import, so
+      a collection no page reaches is never validated. Verified by planting a
+      duplicate slug in `education.ts`: the build passed. See
+      `src/lib/validation/content.ts`.
 - [ ] Playwright e2e: login, and create → publish → appears publicly
 - [ ] GitHub Actions CI; branch protection on `main`
 - [ ] Rate limiting, security headers, CSP

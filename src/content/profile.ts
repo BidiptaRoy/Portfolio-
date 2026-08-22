@@ -20,7 +20,8 @@ export const profile: Profile = profileSchema.parse({
   longBio: [
     "I am a Computer Science student at Boston University, entering my final year. I grew up in Malverne, New York, raised by Bangladeshi immigrant parents — an upbringing that gave me the work ethic and curiosity behind most of what I build.",
     "My interests run through full-stack web development, data-driven interfaces, and product engineering. I like building things from scratch and actually shipping them, whether that is a Jiu Jitsu training app used by classmates or a GIS platform put together over a hackathon weekend.",
-    "I am currently a UI/UX design intern at BU Hack4Impact, where I work on web projects for nonprofit organizations. Away from the keyboard I train Brazilian Jiu Jitsu several days a week, lift, run, and will always say yes to exploring a new city or a good restaurant.",
+    "I am currently a UI/UX design intern at BU Hack4Impact, where I work on web projects for nonprofit organizations, and I return there as a software engineer in Fall 2026. I also serve as secretary of BU's Brazilian Jiu Jitsu club.",
+    "Away from the keyboard I train Jiu Jitsu, compete in powerlifting, and will always say yes to exploring a new city or a good restaurant. I also provide independent professional services — moving assistance, home packing, and general handyman work — for clients around Boston and New York.",
   ],
   location: "Boston, MA",
   email: "bidiptar@bu.edu",
