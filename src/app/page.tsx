@@ -8,11 +8,15 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Rule } from "@/components/ui/rule";
 import { SectionHeading } from "@/components/ui/section-heading";
 
-// Placeholder home. Real copy, featured projects, and experience arrive in
-// Phase 4, sourced through src/server/queries — see docs/roadmap.md.
-// This page exists so the design system can be judged on a real screen.
+import { getCurrentExperience } from "@/server/queries/experience";
+import { getProfile } from "@/server/queries/profile";
 
-const technologies = ["TypeScript", "React", "Node.js", "Python", "PostgreSQL", "Next.js"];
+// Interim home page. The full layout — featured projects, an experience
+// strip, a contact prompt — is Phase 4. What matters here is that every
+// value below comes through src/server/queries, never from src/content.
+
+/** Shown as hero badges. Drawn from real project stacks, not aspiration. */
+const technologies = ["TypeScript", "React", "Next.js", "Node.js", "Python", "MongoDB"];
 
 const sections = [
   {
@@ -32,19 +36,28 @@ const sections = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [profile, current] = await Promise.all([getProfile(), getCurrentExperience()]);
+
   return (
     <Container className="py-16 sm:py-24">
       <section className="flex flex-col gap-6">
         <Eyebrow>Computer Science · Boston University</Eyebrow>
 
-        <h1 className="text-ink font-serif text-4xl leading-[1.05] sm:text-6xl">Bidipta Roy</h1>
+        <h1 className="text-ink font-serif text-4xl leading-[1.05] sm:text-6xl">{profile.name}</h1>
 
-        <p className="text-ink-muted max-w-xl text-lg leading-relaxed">
-          Software engineer focused on building things that stay maintainable long after the first
-          release — full-stack applications, clean data models, and interfaces that get out of the
-          way.
-        </p>
+        <p className="text-ink-muted max-w-xl text-lg leading-relaxed">{profile.shortBio}</p>
+
+        {current ? (
+          <p className="text-ink-muted text-sm">
+            Currently{" "}
+            <span className="text-ink">
+              {current.title}
+              {current.organization ? ` at ${current.organization}` : null}
+            </span>
+            .
+          </p>
+        ) : null}
 
         <div className="mt-2 flex flex-wrap gap-3">
           <Link href="/projects" className={buttonStyles()}>

@@ -4,7 +4,7 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Current phase: 3 — Content contracts.**
+**Current phase: 4 — Public portfolio.**
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -58,10 +58,25 @@ static detailing. The only client component is `SiteNav`.
 
 Types and real content. Still no database.
 
-- [ ] TypeScript types for every entity in `src/types/`
-- [ ] Zod schemas in `src/lib/validation/`
-- [ ] Typed content modules in `src/content/` with **real** data
-- [ ] `src/server/queries/` façade ← **the seam Phase 6 depends on**
+- [x] TypeScript types for every entity in `src/types/content.ts`
+- [x] Zod schemas in `src/lib/validation/content.ts`, parsed at content import
+- [x] Typed content modules in `src/content/` with **real** data, migrated from
+      Bidipta's previous site
+- [x] `src/server/queries/` façade ← **the seam Phase 6 depends on**, guarded
+      with `server-only`
+
+**Phase 3 complete.** Content decisions taken: Computer Science (not CS & Business, which
+the old site claimed); phone number omitted deliberately; the old site's self-reported stat
+bar ("5+ projects", "4+ years coding") dropped as unverifiable padding.
+
+Outstanding content gaps — these need Bidipta, not invention:
+
+- [ ] **Taskrabbit dates.** Omitted entirely rather than guessed. Must be added as
+      `PLATFORM_ENGAGEMENT` / `platform: "Taskrabbit"` / `organization: null`.
+- [ ] **`outcomes` and `challenges` are empty on every project.** These are what make a
+      detail page worth reading, and they cannot be fabricated.
+- [ ] **Confirm B.A. vs B.S.** — currently "Bachelor's degree", accurate either way.
+- [ ] Project screenshots (Phase 9, needs upload support)
 
 ## Phase 4 — Public portfolio
 

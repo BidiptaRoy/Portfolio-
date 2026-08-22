@@ -22,7 +22,7 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 3 (Content contracts). Phases 1–2 complete. See `docs/roadmap.md`.
+- **Current phase:** Phase 4 (Public portfolio). Phases 1–3 complete. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -93,14 +93,21 @@ src/
   lib/
     navigation.ts       Primary nav, single source for header and footer
     utils.ts            cn() — clsx + tailwind-merge
+    validation/
+      content.ts        Zod schemas for every content entity. Content modules
+                        parse with these at import, so bad data fails the build.
+                        Reused by prisma/seed.ts (Ph6) and Server Actions (Ph8).
   content/              Typed content modules — the data source until Phase 6,
-                        then the input to prisma/seed.ts
+                        then the input to prisma/seed.ts. Never imported by a
+                        component; only by src/server/queries.
   server/
-    queries/            ★ Read façade. The ONLY place that knows where data comes from.
+    queries/            ★ Read façade. The ONLY place that knows where data comes
+                        from. Every function is async and returns a Promise even
+                        though the data is currently local — see decisions/0004.
+                        Guarded with `import "server-only"`.
     actions/            Server Actions (writes). Empty until Phase 8.
-  lib/
-    validation/         Zod schemas, one per entity. Shared by forms, actions, seed.
-  types/                Shared domain types
+  types/
+    content.ts          Domain model. The shape the Prisma models will implement.
 docs/
   architecture.md       Full architecture and rationale
   roadmap.md            Phases, with live status
