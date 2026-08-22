@@ -13,26 +13,14 @@ import type { Experience } from "@/types/content";
  */
 export const experience: Experience[] = [
   {
-    slug: "hack4impact-design-intern",
+    // One entry rather than two. The design internship and the earlier
+    // collaborator work are the same continuous involvement with the same
+    // organization; listing them separately would put "BU Hack4Impact ·
+    // Present" twice in a row and read as padding rather than progression.
+    slug: "hack4impact",
     kind: "TECHNICAL",
     engagementType: "INTERNSHIP",
     title: "UI/UX Design Intern",
-    organization: "BU Hack4Impact",
-    platform: null,
-    location: "Boston, MA",
-    startDate: "2026-05",
-    endDate: null,
-    current: true,
-    summary:
-      "Designing interfaces for web applications built pro bono for nonprofit organizations.",
-    highlights: [],
-    skills: ["UI/UX Design", "Product Design", "React"],
-  },
-  {
-    slug: "hack4impact-member",
-    kind: "TECHNICAL",
-    engagementType: "MEMBERSHIP",
-    title: "Member and Collaborator",
     organization: "BU Hack4Impact",
     platform: null,
     location: "Boston, MA",
@@ -40,9 +28,12 @@ export const experience: Experience[] = [
     endDate: null,
     current: true,
     summary:
-      "Collaborating on group web projects for nonprofit clients using JavaScript, HTML/CSS, and React.",
-    highlights: ["Returning as a nonprofit software engineer in Fall 2026"],
-    skills: ["JavaScript", "React", "HTML/CSS"],
+      "Designing interfaces for web applications built pro bono for nonprofit organizations.",
+    highlights: [
+      "Collaborate on group web projects for nonprofit clients using JavaScript, HTML/CSS, and React",
+      "Returning as a nonprofit software engineer in Fall 2026",
+    ],
+    skills: ["UI/UX Design", "Product Design", "React", "JavaScript", "HTML/CSS"],
   },
   {
     slug: "taskrabbit-services",

@@ -25,7 +25,7 @@ export const profile: Profile = profileSchema.parse({
   ],
   location: "Boston, MA",
   email: "bidiptar@bu.edu",
-  availability: "Open to software engineering internships",
+  availability: "Open to software engineering internships and new-grad roles",
 });
 
 export const socialLinks: SocialLink[] = [
