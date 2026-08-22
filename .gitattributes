@@ -1,0 +1,21 @@
+# Normalize all text files to LF in the repository and working tree.
+# Authored on Windows (core.autocrlf=true) but built on Vercel's Linux runners —
+# without this, every file shows as fully modified across platforms.
+* text=auto eol=lf
+
+# Binary assets: never touch these.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.avif   binary
+*.ico    binary
+*.pdf    binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.otf    binary
+
+# Lockfiles are generated — collapse them in diffs and merges.
+package-lock.json  -diff linguist-generated
