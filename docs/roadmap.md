@@ -4,7 +4,7 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Current phase: 6 — Database.**
+**Current phase: 7 — Authentication.**
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -127,12 +127,18 @@ blocked on a Neon connection string.
 - [x] `prisma/seed.ts` importing `src/content/*`, idempotent via upsert
 - [x] `db:*` scripts; `prisma generate` wired into `npm run build`
 - [x] Generated client excluded from git, ESLint, and Prettier
-- [ ] **Blocked on Bidipta:** create a Neon project, put `DATABASE_URL` and
-      `DIRECT_URL` in `.env.local`
-- [ ] First migration (`npm run db:migrate`)
-- [ ] Seed (`npm run db:seed`)
-- [ ] **Swap query façade internals to Prisma — components untouched**
-- [ ] Cache invalidation strategy (this is Next 16; read the bundled docs first)
+- [x] Neon project created; `DATABASE_URL` (pooled) and `DIRECT_URL` in `.env.local`
+- [x] First migration applied — `20260822052232_init`
+- [x] Seeded: profile, 7 projects, 5 experience, 1 education, 28 skills,
+      3 social links, 1 resume version
+- [x] **Query façade swapped to Prisma — not one component changed.** Verified by
+      diffing the prerendered HTML against the file-backed build: identical.
+- [ ] Cache invalidation — deferred to Phase 8. There are no mutations yet, so
+      there is nothing to invalidate. Pages prerender from the database at build
+      time; a row edited directly does not appear until the next deploy.
+
+**Phase 6 complete.** The seam described in `docs/decisions/0004` did exactly what
+it was designed to do.
 
 > ⚠ Once the CMS exists in Phase 8, `npm run db:seed` will overwrite rows edited
 > through `/admin` with whatever is in `src/content/`. Before then it is the

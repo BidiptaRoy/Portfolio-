@@ -22,7 +22,7 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 6 (Database). Phases 1–5 complete. See `docs/roadmap.md`.
+- **Current phase:** Phase 7 (Authentication). Phases 1–6 complete. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -43,9 +43,16 @@ Public routes (Server Components, cached)
 
 **The single most important convention in this repo:** pages and components never import
 content or call the database directly. They call a function in `src/server/queries/`.
-Today those functions return typed data from `src/content/`; in Phase 6 their bodies are
-swapped to Prisma queries **and no component changes**. Do not bypass this seam — it is the
-entire reason the public site can ship before the database exists.
+
+Those functions returned typed data from `src/content/` through Phase 5, and were swapped
+to Prisma in Phase 6 **without a single component changing**. Do not bypass this seam.
+
+`src/content/` is now the **seed source, not the runtime source.** Editing a file there
+changes nothing on the site until `npm run db:seed` runs.
+
+**Rendering and staleness:** public pages are prerendered at build time from the database,
+so a row edited directly in the database does not appear until the next deploy. On-demand
+revalidation arrives in Phase 8, alongside the mutations that need it.
 
 Full reasoning: `docs/architecture.md`. Decisions: `docs/decisions/`.
 
@@ -111,13 +118,13 @@ src/
       content.ts        Zod schemas for every content entity. Content modules
                         parse with these at import, so bad data fails the build.
                         Reused by prisma/seed.ts (Ph6) and Server Actions (Ph8).
-  content/              Typed content modules — the data source until Phase 6,
-                        then the input to prisma/seed.ts. Never imported by a
-                        component; only by src/server/queries.
+  content/              Typed content modules. SEED SOURCE ONLY since Phase 6 —
+                        read by prisma/seed.ts, never by the app at runtime.
+  generated/prisma/     Prisma client. Build output, gitignored. Never edit.
   server/
-    queries/            ★ Read façade. The ONLY place that knows where data comes
-                        from. Every function is async and returns a Promise even
-                        though the data is currently local — see decisions/0004.
+    queries/            ★ Read façade. The ONLY place that touches Prisma.
+                        Selects explicit fields so results are structurally the
+                        domain types and internal columns never leak out.
                         Guarded with `import "server-only"`.
     actions/            Server Actions (writes). Empty until Phase 8.
   types/

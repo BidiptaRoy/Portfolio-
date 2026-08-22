@@ -1,6 +1,13 @@
-import "dotenv/config";
-
+import { config as loadEnv } from "dotenv";
 import { defineConfig } from "prisma/config";
+
+// Next.js loads .env.local automatically; the Prisma CLI does not, and bare
+// `dotenv/config` reads only `.env`. Without this the CLI sees no connection
+// string and fails with an error that points at the database rather than at
+// the missing file. Loading .env.local first gives it precedence, because
+// dotenv never overwrites a variable that is already set.
+loadEnv({ path: ".env.local", quiet: true });
+loadEnv({ quiet: true });
 
 /**
  * Prisma CLI configuration (Prisma 7).

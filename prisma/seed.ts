@@ -1,6 +1,9 @@
-import "dotenv/config";
-
 import { PrismaPg } from "@prisma/adapter-pg";
+import { config as loadEnv } from "dotenv";
+
+// See prisma.config.ts — the CLI does not read .env.local on its own.
+loadEnv({ path: ".env.local", quiet: true });
+loadEnv({ quiet: true });
 
 import { education } from "../src/content/education";
 import { experience } from "../src/content/experience";

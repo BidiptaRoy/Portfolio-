@@ -1,6 +1,6 @@
 import "server-only";
 
-import { skills } from "@/content/skills";
+import { prisma } from "@/lib/db";
 import type { Skill, SkillCategory } from "@/types/content";
 
 /** Read façade for skills. See `./projects.ts` for rationale. */
@@ -15,11 +15,12 @@ export const CATEGORY_LABELS: Record<SkillCategory, string> = {
   PRACTICE: "Practices",
 };
 
-const published = (items: Skill[]) =>
-  items.filter((item) => item.status === "PUBLISHED").sort((a, b) => a.sortOrder - b.sortOrder);
-
 export async function getSkills(): Promise<Skill[]> {
-  return published(skills);
+  return prisma.skill.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { sortOrder: "asc" },
+    select: { name: true, category: true, status: true, sortOrder: true },
+  });
 }
 
 /**
@@ -29,7 +30,7 @@ export async function getSkills(): Promise<Skill[]> {
 export async function getSkillsByCategory(): Promise<
   { category: SkillCategory; label: string; skills: Skill[] }[]
 > {
-  const all = published(skills);
+  const all = await getSkills();
 
   return CATEGORY_ORDER.map((category) => ({
     category,
