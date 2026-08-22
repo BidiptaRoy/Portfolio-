@@ -4,7 +4,9 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Current phase: 1 — Foundation.**
+**Current phase: 2 — Design system.**
+
+Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
 The ordering is deliberate: **a live, deployed public site exists at the end of Phase 5**,
 before the database, authentication, or CMS. The read façade (`src/server/queries/`) is what
@@ -25,9 +27,13 @@ Repository that builds, deploys, and explains itself. No features.
 - [x] Directory skeleton
 - [x] `CLAUDE.md`, `README.md`, `docs/`, ADRs 0001–0004
 - [x] `.env.example`
-- [ ] Verify: typecheck, lint, build all clean
-- [ ] First commit and push to `origin/main`
-- [ ] Connect Vercel, confirm live URL
+- [x] Verify: typecheck, lint, build all clean
+- [x] First commit and push to `origin/main`
+- [x] Connect Vercel, confirm live URL
+
+**Phase 1 complete.** Two findings worth carrying forward: this is Next.js **16**, not 15
+(the caching model changed — re-check assumptions in Phase 6), and `npm run typecheck` must
+run `next typegen` first or it fails on a fresh clone. Both are documented in `CLAUDE.md`.
 
 ## Phase 2 — Design system
 

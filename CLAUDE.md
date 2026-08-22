@@ -21,8 +21,11 @@ instead of by editing React components.
 A second audience exists alongside recruiters: prospective clients for independent
 professional services offered via Taskrabbit. That area is planned but not built.
 
-- **Live URL:** _not yet deployed — set in Phase 1, Task 9_
-- **Current phase:** Phase 1 (Foundation). See `docs/roadmap.md`.
+- **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
+- **Current phase:** Phase 2 (Design system). Phase 1 complete. See `docs/roadmap.md`.
+
+Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
+requests get their own preview deployments.
 
 ---
 

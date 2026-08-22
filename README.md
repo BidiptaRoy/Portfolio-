@@ -7,7 +7,9 @@ Built as a full-stack application rather than a static site, so that portfolio c
 projects, experience, education, skills — can eventually be managed as **data through an
 admin dashboard** instead of by editing source files.
 
-**Status:** Phase 1 of 11 — foundation. Not yet deployed. See [`docs/roadmap.md`](docs/roadmap.md).
+**Live:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
+
+**Status:** Phase 2 of 11 — design system. See [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Stack
 
