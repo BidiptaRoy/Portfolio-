@@ -61,6 +61,30 @@ enum SocialPlatform {
 }
 
 // ---------------------------------------------------------------------------
+// Authentication
+// ---------------------------------------------------------------------------
+
+/// The site's single administrator.
+///
+/// There is deliberately no `role` column and no self-service creation path:
+/// rows are inserted only by scripts/create-admin.ts, run locally. No HTTP
+/// endpoint anywhere in this codebase creates an AdminUser. That absence is
+/// the single most effective security control available here, and it is free.
+///
+/// No session table — the JWT strategy keeps session state in a signed cookie,
+/// which is appropriate for exactly one user. See docs/decisions/0003.
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  /// argon2id. Never a plaintext or reversibly-encoded password.
+  passwordHash String
+  name         String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ---------------------------------------------------------------------------
 // Content
 //
 // Dates that describe periods (a project's completion, a role's start) are
