@@ -13,8 +13,85 @@ import { z } from "zod";
  * browser validated. Client validation is a convenience; this is the check.
  */
 
-const YEAR_MONTH = /^\d{4}(-(0[1-9]|1[0-2]))?$/;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+const MONTH_NAMES: Record<string, string> = {
+  jan: "01",
+  january: "01",
+  feb: "02",
+  february: "02",
+  mar: "03",
+  march: "03",
+  apr: "04",
+  april: "04",
+  may: "05",
+  jun: "06",
+  june: "06",
+  jul: "07",
+  july: "07",
+  aug: "08",
+  august: "08",
+  sep: "09",
+  sept: "09",
+  september: "09",
+  oct: "10",
+  october: "10",
+  nov: "11",
+  november: "11",
+  dec: "12",
+  december: "12",
+};
+
+function combine(year: string, month: string): string | false {
+  const n = Number(month);
+  if (!Number.isInteger(n) || n < 1 || n > 12) return false;
+  return `${year}-${String(n).padStart(2, "0")}`;
+}
+
+/**
+ * Parse the ways a person actually writes a month into the stored
+ * "YYYY" / "YYYY-MM" form.
+ *
+ * The first version of this accepted ONLY the canonical format and rejected
+ * everything else. That is technically defensible and practically hostile:
+ * typing "June 2025" or "2025-6" into a date field is entirely reasonable,
+ * and being turned away for it — behind an error message further up a long
+ * form — cost a real edit. Normalize what is unambiguous; reject only what
+ * genuinely cannot be read.
+ *
+ * Returns the canonical string, `null` for empty, or `false` for unparseable.
+ */
+export function normalizeYearMonth(raw: string): string | null | false {
+  const value = raw.trim();
+  if (value === "") return null;
+
+  // 2025
+  if (/^\d{4}$/.test(value)) return value;
+
+  // 2025-6 · 2025-06 · 2025/6 · 2025.06
+  const yearFirst = /^(\d{4})[-/.\s](\d{1,2})$/.exec(value);
+  if (yearFirst?.[1] && yearFirst[2]) return combine(yearFirst[1], yearFirst[2]);
+
+  // 6/2025 · 06-2025
+  const monthFirst = /^(\d{1,2})[-/.](\d{4})$/.exec(value);
+  if (monthFirst?.[1] && monthFirst[2]) return combine(monthFirst[2], monthFirst[1]);
+
+  // June 2025 · Jun 2025 · Jun. 2025
+  const named = /^([A-Za-z]+)\.?\s+(\d{4})$/.exec(value);
+  if (named?.[1] && named[2]) {
+    const month = MONTH_NAMES[named[1].toLowerCase()];
+    return month ? `${named[2]}-${month}` : false;
+  }
+
+  // 2025 June
+  const yearNamed = /^(\d{4})\s+([A-Za-z]+)\.?$/.exec(value);
+  if (yearNamed?.[1] && yearNamed[2]) {
+    const month = MONTH_NAMES[yearNamed[2].toLowerCase()];
+    return month ? `${yearNamed[1]}-${month}` : false;
+  }
+
+  return false;
+}
 
 /** A textarea of one item per line → a trimmed array with blanks dropped. */
 const lineList = z.string().transform((value) =>
@@ -30,10 +107,17 @@ const optionalText = z
   .transform((value) => value.trim())
   .transform((value) => (value === "" ? null : value));
 
-const optionalYearMonth = optionalText.refine(
-  (value) => value === null || YEAR_MONTH.test(value),
-  "Expected a year (2025) or a year and month (2025-11)",
-);
+/**
+ * Accepts "2025", "2025-06", "2025-6", "6/2025", "June 2025" and friends,
+ * and stores the canonical form. Empty means "not set".
+ */
+const optionalYearMonth = z
+  .string()
+  .transform((value) => normalizeYearMonth(value))
+  .refine(
+    (value): value is string | null => value !== false,
+    "Could not read that as a date. Try 2025, 2025-06, or June 2025.",
+  );
 
 const optionalUrl = optionalText.refine(
   (value) => value === null || z.url().safeParse(value).success,

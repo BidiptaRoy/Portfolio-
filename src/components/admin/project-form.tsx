@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
 import { Field, Select, TextArea, TextInput } from "@/components/admin/form-fields";
@@ -29,14 +29,49 @@ export function ProjectForm({ project }: { project?: Project }) {
   const [state, formAction] = useActionState(saveProject, emptyFormState);
   const isEdit = Boolean(project);
   const errors = state.fieldErrors;
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const firstErrorField = Object.keys(errors)[0];
+  const hasErrors = Boolean(state.error) || Boolean(firstErrorField);
+
+  /**
+   * Move the user to the first invalid field after a rejected save.
+   *
+   * Without this the only feedback is a banner at the top of a form that is
+   * several screens tall. Submitting from the bottom looked exactly like a
+   * successful save, and an edit was lost to it. A silent no-op is the worst
+   * possible outcome for a form.
+   */
+  useEffect(() => {
+    if (!hasErrors) return;
+
+    const target =
+      (firstErrorField
+        ? formRef.current?.querySelector<HTMLElement>(`[name="${firstErrorField}"]`)
+        : null) ?? formRef.current?.querySelector<HTMLElement>("[data-form-error]");
+
+    target?.scrollIntoView({ block: "center" });
+
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement
+    ) {
+      target.focus();
+    }
+  }, [state, hasErrors, firstErrorField]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-6">
       {isEdit ? <input type="hidden" name="originalSlug" defaultValue={project?.slug} /> : null}
 
-      {state.error ? (
-        <p role="alert" className="border-accent text-accent rounded-md border px-3 py-2 text-sm">
-          {state.error}
+      {hasErrors ? (
+        <p
+          data-form-error
+          role="alert"
+          className="border-accent text-accent rounded-md border px-3 py-2 text-sm"
+        >
+          {state.error ?? "Nothing was saved — please correct the highlighted field."}
         </p>
       ) : null}
 
@@ -92,7 +127,7 @@ export function ProjectForm({ project }: { project?: Project }) {
         <Field
           label="Started"
           htmlFor="startedAt"
-          hint="2025 or 2025-11. Leave blank if unknown."
+          hint="2025, 2025-06, or June 2025. Leave blank if unknown."
           errors={errors.startedAt}
         >
           <TextInput id="startedAt" name="startedAt" defaultValue={project?.startedAt ?? ""} />
@@ -101,7 +136,7 @@ export function ProjectForm({ project }: { project?: Project }) {
         <Field
           label="Completed"
           htmlFor="completedAt"
-          hint="2025 or 2025-11."
+          hint="2025, 2025-06, or June 2025."
           errors={errors.completedAt}
         >
           <TextInput
@@ -204,6 +239,14 @@ export function ProjectForm({ project }: { project?: Project }) {
           </label>
         </div>
       </div>
+
+      {/* Repeated next to the button, because that is where the user is
+          looking when they submit a form this tall. */}
+      {hasErrors ? (
+        <p role="status" className="text-accent text-sm">
+          Not saved — {state.error ?? "please correct the highlighted field."}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-3">
         <SubmitButton isEdit={isEdit} />
