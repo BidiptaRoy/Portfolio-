@@ -41,12 +41,19 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
+  // The photo is deliberately left out of the UPDATE. Re-seeding is expected
+  // to overwrite text with whatever src/content says — that is the documented
+  // point of it — but src/content has no photo to say anything about, so
+  // including it would silently reset an uploaded portrait to null and orphan
+  // the file. Uploaded media is not the seed's to reset.
+  // `undefined` is Prisma's "leave this column alone" in an update, which is
+  // exactly the intent — as opposed to null, which would clear it.
   await prisma.profile.upsert({
     where: { id: "singleton" },
-    update: profile,
+    update: { ...profile, photoUrl: undefined },
     create: { id: "singleton", ...profile },
   });
-  console.log("✓ profile");
+  console.log("✓ profile (photo left untouched — uploads are not seeded)");
 
   for (const project of projects) {
     await prisma.project.upsert({

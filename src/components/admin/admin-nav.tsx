@@ -6,9 +6,10 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 /**
- * Admin section navigation. Entities beyond Projects arrive in the second
- * half of Phase 8; they are listed as disabled so the shape of the finished
- * CMS is visible rather than implied.
+ * Admin section navigation.
+ *
+ * `ready: false` renders a section as disabled, so the shape of the finished
+ * CMS stays visible while it is being built. Nothing is disabled today.
  */
 const sections = [
   { href: "/admin", label: "Dashboard", ready: true },
@@ -16,6 +17,7 @@ const sections = [
   { href: "/admin/experience", label: "Experience", ready: true },
   { href: "/admin/education", label: "Education", ready: true },
   { href: "/admin/skills", label: "Skills", ready: true },
+  { href: "/admin/resume", label: "Resume", ready: true },
   { href: "/admin/profile", label: "Profile", ready: true },
 ];
 
@@ -34,7 +36,7 @@ export function AdminNav() {
               <li key={section.href}>
                 <span
                   className="text-ink-muted/60 flex min-h-11 items-center text-sm sm:min-h-0 sm:py-1"
-                  title="Coming in the next part of Phase 8"
+                  title="Not built yet"
                 >
                   {section.label}
                 </span>

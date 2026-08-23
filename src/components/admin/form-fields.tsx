@@ -88,6 +88,33 @@ export function TextArea({
   );
 }
 
+/**
+ * A file input.
+ *
+ * `accept` is a hint to the file picker and nothing more — it filters what is
+ * easy to choose, not what can be submitted. The check that counts reads the
+ * file's magic bytes on the server; see src/lib/storage.ts.
+ */
+export function FileInput({
+  errors,
+  ...props
+}: React.ComponentProps<"input"> & { errors?: string[] }) {
+  return (
+    <input
+      {...props}
+      type="file"
+      aria-invalid={errors?.length ? true : undefined}
+      aria-describedby={errors?.length ? `${props.id}-error` : undefined}
+      className={cn(
+        controlClass,
+        "file:border-line file:text-ink file:mr-3 file:rounded-sm file:border file:bg-transparent file:px-2 file:py-1 file:text-sm",
+        "py-2 text-sm",
+        props.className,
+      )}
+    />
+  );
+}
+
 export function Select({
   errors,
   ...props

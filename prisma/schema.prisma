@@ -104,8 +104,21 @@ model Profile {
   location     String
   email        String
   availability String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+
+  /// Portrait shown in the home page hero. Null is a supported state — the
+  /// hero renders as a single text column without it, exactly as it did
+  /// before Phase 9a.
+  ///
+  /// No `alt` column on purpose: the alt text for a portrait is the person's
+  /// name, which is the row above. A field that can only sensibly hold one
+  /// value is a field that will eventually hold the wrong one.
+  photoUrl      String?
+  /// Path within the Blob store, so replacing the photo can delete the old
+  /// file. Null when no photo has been uploaded. See ProjectImage.
+  photoPathname String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Project {
@@ -130,7 +143,45 @@ model Project {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
+  images ProjectImage[]
+
   @@index([status, sortOrder])
+}
+
+/// A screenshot or diagram belonging to a project.
+///
+/// The one content model WITHOUT a `status` column, which is a deliberate
+/// exception to the rule in CLAUDE.md. An image is not independently
+/// publishable: its visibility is its project's, and a second publish axis
+/// would mean a published project could silently render nothing while every
+/// image sat in draft. To take an image off the site, delete it or reorder it.
+///
+/// `alt` is a required column rather than an optional one. Alt text that can
+/// be skipped is alt text that is skipped, and these images carry the actual
+/// content of a project page. Decorative images are not a case this model
+/// needs to serve.
+model ProjectImage {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  url String
+  /// The path within the Blob store. Kept so the file can be deleted, and so
+  /// an orphan can be matched back to the row that owned it.
+  pathname String
+  alt      String
+  caption  String?
+  /// Intrinsic dimensions, read from the file header at upload. Nullable
+  /// because parsing is best effort — see readImageDimensions in
+  /// src/lib/storage.ts. Used to reserve space and avoid layout shift.
+  width  Int?
+  height Int?
+
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, sortOrder])
 }
 
 model Experience {
@@ -208,6 +259,17 @@ model ResumeVersion {
   id           String  @id @default(cuid())
   label        String
   fileUrl      String
+  /// The URL that forces a save-to-disk instead of opening in the browser.
+  ///
+  /// Needed because `<a download>` is IGNORED cross-origin: once the file
+  /// lives on a Blob domain rather than under /public, the download button
+  /// silently becomes an "open in this tab" button. Vercel Blob serves this
+  /// variant with `content-disposition: attachment`.
+  ///
+  /// Null for a file still served from /public, where `download` works.
+  downloadUrl  String?
+  /// The path within the Blob store; null for a /public file. See ProjectImage.
+  pathname     String?
   downloadName String
   /// The month the resume itself was revised — not the row timestamp.
   revisedAt    String

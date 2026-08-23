@@ -2,7 +2,15 @@ import "server-only";
 
 import { requireAdmin } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
-import type { Education, Experience, Profile, Project, Skill } from "@/types/content";
+import type {
+  Education,
+  Experience,
+  Profile,
+  Project,
+  ProjectImage,
+  ResumeVersion,
+  Skill,
+} from "@/types/content";
 
 /**
  * Admin reads — the ONLY queries that return unpublished records.
@@ -65,6 +73,55 @@ export async function getProjectForAdmin(slug: string): Promise<Project | null> 
       liveUrl: true,
       outcomes: true,
       challenges: true,
+      status: true,
+      sortOrder: true,
+    },
+  });
+}
+
+/**
+ * A project's gallery, in display order.
+ *
+ * Separate from `getProjectForAdmin` rather than an `include` on it, because
+ * the edit form does not want images and the image manager does not want the
+ * form's twelve text columns. Two queries on one page is cheaper than either
+ * one over-fetching.
+ */
+export async function getProjectImagesForAdmin(slug: string): Promise<ProjectImage[]> {
+  await requireAdmin();
+
+  return prisma.projectImage.findMany({
+    where: { project: { slug } },
+    orderBy: { sortOrder: "asc" },
+    select: {
+      id: true,
+      url: true,
+      alt: true,
+      caption: true,
+      width: true,
+      height: true,
+      sortOrder: true,
+    },
+  });
+}
+
+/** Includes drafts. Every revision, newest intent first. */
+export type AdminResumeVersion = ResumeVersion & { id: string };
+
+export async function getResumeVersionsForAdmin(): Promise<AdminResumeVersion[]> {
+  await requireAdmin();
+
+  return prisma.resumeVersion.findMany({
+    orderBy: [{ sortOrder: "asc" }, { revisedAt: "desc" }],
+    select: {
+      id: true,
+      label: true,
+      fileUrl: true,
+      downloadUrl: true,
+      pathname: true,
+      downloadName: true,
+      revisedAt: true,
+      isCurrent: true,
       status: true,
       sortOrder: true,
     },
@@ -160,8 +217,14 @@ export async function getSkillForAdmin(id: string): Promise<AdminSkill | null> {
   });
 }
 
+/**
+ * The admin also sees `photoPathname`, which the public façade does not: it
+ * is a storage location, not content, and no page has any use for it.
+ */
+export type AdminProfile = Profile & { photoPathname: string | null };
+
 /** Null when the singleton has never been created. The form handles that. */
-export async function getProfileForAdmin(): Promise<Profile | null> {
+export async function getProfileForAdmin(): Promise<AdminProfile | null> {
   await requireAdmin();
   return prisma.profile.findUnique({
     where: { id: "singleton" },
@@ -173,6 +236,8 @@ export async function getProfileForAdmin(): Promise<Profile | null> {
       location: true,
       email: true,
       availability: true,
+      photoUrl: true,
+      photoPathname: true,
     },
   });
 }
@@ -181,13 +246,17 @@ export async function getProfileForAdmin(): Promise<Profile | null> {
 export async function getAdminCounts() {
   await requireAdmin();
 
-  const [projects, drafts, experience, education, skills] = await Promise.all([
-    prisma.project.count(),
-    prisma.project.count({ where: { status: "DRAFT" } }),
-    prisma.experience.count(),
-    prisma.education.count(),
-    prisma.skill.count(),
-  ]);
+  const [projects, drafts, experience, education, skills, images, resumes, publishedResumes] =
+    await Promise.all([
+      prisma.project.count(),
+      prisma.project.count({ where: { status: "DRAFT" } }),
+      prisma.experience.count(),
+      prisma.education.count(),
+      prisma.skill.count(),
+      prisma.projectImage.count(),
+      prisma.resumeVersion.count(),
+      prisma.resumeVersion.count({ where: { status: "PUBLISHED" } }),
+    ]);
 
-  return { projects, drafts, experience, education, skills };
+  return { projects, drafts, experience, education, skills, images, resumes, publishedResumes };
 }

@@ -223,6 +223,58 @@ export const skillFormSchema = z.object({
   sortOrder: z.coerce.number().int(),
 });
 
+/**
+ * Uploads.
+ *
+ * The FILE ITSELF IS NOT VALIDATED HERE. `Object.fromEntries(formData)` turns
+ * a file input into a `File`, and no Zod rule on it would mean anything: the
+ * name, the size, and the declared type are all supplied by the client. Files
+ * are checked in `src/lib/storage.ts`, against their actual bytes. These
+ * schemas cover the text fields that travel alongside.
+ */
+export const projectImageFormSchema = z.object({
+  slug: z.string().trim().min(1),
+  // Required, unlike almost every other optional-looking field in this file.
+  // An image on a project page carries content, and alt text that can be
+  // skipped is alt text that is skipped.
+  alt: z
+    .string()
+    .trim()
+    .min(1, "Describe the image for someone who cannot see it")
+    .max(300, "Keep alt text under 300 characters"),
+  caption: optionalText,
+});
+
+export const projectImageEditSchema = z.object({
+  id: z.string().min(1),
+  alt: z
+    .string()
+    .trim()
+    .min(1, "Describe the image for someone who cannot see it")
+    .max(300, "Keep alt text under 300 characters"),
+  caption: optionalText,
+  sortOrder: z.coerce.number().int(),
+});
+
+export const resumeFormSchema = z.object({
+  label: z.string().trim().min(1, "Required"),
+  // Ends in .pdf and contains no path separators: this becomes the last
+  // segment of the storage path, and therefore the filename a visitor's
+  // browser saves. A slash here would silently create a folder instead.
+  downloadName: z
+    .string()
+    .trim()
+    .min(1, "Required")
+    .regex(/^[A-Za-z0-9._-]+\.pdf$/i, "A filename ending in .pdf, with no slashes or spaces"),
+  revisedAt: z
+    .string()
+    .transform((value) => normalizeYearMonth(value))
+    .refine((value) => value !== false && value !== null, "Required — e.g. 2026-04")
+    .transform((value) => value as string),
+  isCurrent: checkbox,
+  status: z.enum(["DRAFT", "PUBLISHED"]),
+});
+
 export const profileFormSchema = z.object({
   name: z.string().trim().min(1, "Required"),
   headline: z.string().trim().min(1, "Required"),
@@ -259,3 +311,37 @@ export type FormState = {
 };
 
 export const emptyFormState: FormState = { error: null, fieldErrors: {} };
+
+/**
+ * Flatten a Zod error into the `fieldErrors` shape `FormShell` reads.
+ *
+ * Lives here rather than beside the actions because a `"use server"` module
+ * may only export async functions, and every actions file needs it. Nested
+ * paths are joined with a dot; an issue with no path (a schema-level
+ * `.refine`) is filed under "form".
+ */
+export function toFieldErrors(error: {
+  issues: { path: PropertyKey[]; message: string }[];
+}): Record<string, string[]> {
+  const fieldErrors: Record<string, string[]> = {};
+
+  for (const issue of error.issues) {
+    const key = issue.path.map(String).join(".") || "form";
+    fieldErrors[key] = [...(fieldErrors[key] ?? []), issue.message];
+  }
+
+  return fieldErrors;
+}
+
+/** The standard "nothing was saved" response to a failed parse. */
+export function invalidForm(error: Parameters<typeof toFieldErrors>[0]): FormState {
+  return {
+    error: "Please correct the highlighted fields.",
+    fieldErrors: toFieldErrors(error),
+  };
+}
+
+/** A single-field failure that did not come from Zod — an upload, say. */
+export function fieldError(field: string, message: string): FormState {
+  return { error: null, fieldErrors: { [field]: [message] } };
+}

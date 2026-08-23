@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import type { Project } from "@/types/content";
+import type { ProjectSummary, ProjectWithImages } from "@/types/content";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -42,27 +42,65 @@ const projectFields = {
   sortOrder: true,
 } as const;
 
-export async function getProjects(): Promise<Project[]> {
-  return prisma.project.findMany({
+const imageFields = {
+  id: true,
+  url: true,
+  alt: true,
+  caption: true,
+  width: true,
+  height: true,
+  sortOrder: true,
+} as const;
+
+/**
+ * Images have no `status` of their own — a project's gallery is published
+ * exactly when the project is. See the note on the Prisma model.
+ */
+const gallery = {
+  select: imageFields,
+  orderBy: { sortOrder: "asc" },
+} as const;
+
+/** Just the first image, for a card thumbnail. See `ProjectSummary`. */
+const cover = { ...gallery, take: 1 } as const;
+
+/**
+ * Prisma returns a relation as an array whatever the `take`, so a "cover"
+ * arrives as a zero- or one-element list. Flattened here rather than in the
+ * components, so no page has to know that.
+ */
+function withCover<T extends { images: ProjectSummary["cover"][] }>(
+  row: T,
+): Omit<T, "images"> & { cover: ProjectSummary["cover"] } {
+  const { images, ...rest } = row;
+  return { ...rest, cover: images[0] ?? null };
+}
+
+export async function getProjects(): Promise<ProjectSummary[]> {
+  const rows = await prisma.project.findMany({
     where: { status: "PUBLISHED" },
     orderBy: { sortOrder: "asc" },
-    select: projectFields,
+    select: { ...projectFields, images: cover },
   });
+
+  return rows.map(withCover);
 }
 
-export async function getFeaturedProjects(limit?: number): Promise<Project[]> {
-  return prisma.project.findMany({
+export async function getFeaturedProjects(limit?: number): Promise<ProjectSummary[]> {
+  const rows = await prisma.project.findMany({
     where: { status: "PUBLISHED", featured: true },
     orderBy: { sortOrder: "asc" },
-    select: projectFields,
+    select: { ...projectFields, images: cover },
     ...(typeof limit === "number" ? { take: limit } : {}),
   });
+
+  return rows.map(withCover);
 }
 
-export async function getProjectBySlug(slug: string): Promise<Project | null> {
+export async function getProjectBySlug(slug: string): Promise<ProjectWithImages | null> {
   return prisma.project.findFirst({
     where: { slug, status: "PUBLISHED" },
-    select: projectFields,
+    select: { ...projectFields, images: gallery },
   });
 }
 

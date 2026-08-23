@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { Container } from "@/components/layout/container";
@@ -32,33 +33,68 @@ export default async function HomePage() {
         socials={socials}
         siteUrl={getSiteUrl()}
       />
-      {/* Hero — answers "should I keep reading?" in about five seconds. */}
-      <section className="flex flex-col gap-6">
-        <Eyebrow>Computer Science · Boston University</Eyebrow>
+      {/*
+        Hero — answers "should I keep reading?" in about five seconds.
 
-        <h1 className="text-ink font-serif text-4xl leading-[1.05] sm:text-6xl">{profile.name}</h1>
+        Two columns when there is a portrait, one when there is not. The text
+        column comes first in the DOM either way, so the name and the summary
+        are what a screen reader and a narrow phone reach first; the photo
+        supports the introduction rather than delaying it.
+      */}
+      <section className="flex flex-col gap-10 sm:flex-row sm:items-start sm:gap-12">
+        <div className="flex flex-1 flex-col gap-6">
+          <Eyebrow>Computer Science · Boston University</Eyebrow>
 
-        <p className="text-ink-muted max-w-xl text-lg leading-relaxed">{profile.shortBio}</p>
+          <h1 className="text-ink font-serif text-4xl leading-[1.05] sm:text-6xl">
+            {profile.name}
+          </h1>
 
-        {current ? (
-          <p className="text-ink-muted text-sm">
-            Currently{" "}
-            <span className="text-ink">
-              {current.title}
-              {current.organization ? ` at ${current.organization}` : null}
-            </span>
-            {profile.availability ? ` · ${profile.availability}` : null}
-          </p>
-        ) : null}
+          <p className="text-ink-muted max-w-xl text-lg leading-relaxed">{profile.shortBio}</p>
 
-        <div className="mt-2 flex flex-wrap gap-3">
-          <Link href="/projects" className={buttonStyles()}>
-            View projects
-          </Link>
-          <Link href="/contact" className={buttonStyles({ variant: "secondary" })}>
-            Get in touch
-          </Link>
+          {current ? (
+            <p className="text-ink-muted text-sm">
+              Currently{" "}
+              <span className="text-ink">
+                {current.title}
+                {current.organization ? ` at ${current.organization}` : null}
+              </span>
+              {profile.availability ? ` · ${profile.availability}` : null}
+            </p>
+          ) : null}
+
+          <div className="mt-2 flex flex-wrap gap-3">
+            <Link href="/projects" className={buttonStyles()}>
+              View projects
+            </Link>
+            <Link href="/contact" className={buttonStyles({ variant: "secondary" })}>
+              Get in touch
+            </Link>
+          </div>
         </div>
+
+        {profile.photoUrl ? (
+          <div className="w-full max-w-[16rem] shrink-0 sm:w-56 lg:w-64">
+            {/*
+              `priority` because this is the largest element above the fold on
+              the site's most-visited page — the one image where lazy loading
+              costs a visible beat rather than saving one.
+
+              `object-top` keeps a face in frame when a tall photo is cropped
+              to this ratio; a portrait's subject is near the top, and
+              centre-cropping a full-length shot lands on a torso.
+            */}
+            <div className="bg-surface border-line relative aspect-[4/5] overflow-hidden rounded-lg border">
+              <Image
+                src={profile.photoUrl}
+                alt={profile.name}
+                fill
+                priority
+                sizes="(min-width: 1024px) 16rem, (min-width: 640px) 14rem, 16rem"
+                className="object-cover object-top"
+              />
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <Rule ornament className="my-16" />

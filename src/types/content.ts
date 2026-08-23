@@ -51,6 +51,40 @@ export interface Project extends ContentMeta {
 }
 
 /**
+ * A screenshot or diagram on a project page.
+ *
+ * Uploaded through the admin, never seeded: `src/content/` is a text source
+ * and there are no binary files in it. A fresh database therefore has
+ * projects but no images, which is a supported state everywhere they render.
+ */
+export interface ProjectImage {
+  id: string;
+  url: string;
+  /** Required, never optional — see the note on the Prisma model. */
+  alt: string;
+  caption: string | null;
+  /**
+   * Intrinsic size when it could be read from the file. Null is handled by
+   * falling back to a default aspect ratio, never by guessing dimensions.
+   */
+  width: number | null;
+  height: number | null;
+  sortOrder: number;
+}
+
+/** A project together with its gallery. What the detail page renders. */
+export type ProjectWithImages = Project & { images: ProjectImage[] };
+
+/**
+ * A project as it appears in a list, carrying only its first image.
+ *
+ * Distinct from `ProjectWithImages` so that listing seven projects does not
+ * also load seven galleries to render seven thumbnails. `cover` is null both
+ * when a project has no images and before any have been uploaded.
+ */
+export type ProjectSummary = Project & { cover: ProjectImage | null };
+
+/**
  * Which section of the Experience page an entry belongs to.
  * Drives grouping only; every kind gets identical visual treatment.
  *
@@ -120,8 +154,16 @@ export interface Skill extends ContentMeta {
  */
 export interface ResumeVersion extends ContentMeta {
   label: string;
-  /** Path under /public today; a Blob URL from Phase 9. */
+  /** A path under /public, or a Blob URL for anything uploaded since Phase 9. */
   fileUrl: string;
+  /**
+   * The URL that saves the file instead of opening it, or null for a /public
+   * file. `<a download>` does nothing cross-origin, so a Blob-hosted resume
+   * needs this or the download button quietly stops downloading.
+   */
+  downloadUrl: string | null;
+  /** Path within the Blob store; null for a /public file. */
+  pathname: string | null;
   /** The filename a visitor's browser saves it as. */
   downloadName: string;
   /**
@@ -151,4 +193,12 @@ export interface Profile {
   location: string;
   email: string;
   availability: string | null;
+  /**
+   * Portrait for the home page hero, or null.
+   *
+   * There is no accompanying alt text because a portrait's alt text is the
+   * person's name — `profile.name`, two fields up. Storing it separately
+   * would create a second place for the same fact to be wrong.
+   */
+  photoUrl: string | null;
 }

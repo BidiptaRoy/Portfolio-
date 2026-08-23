@@ -5,7 +5,8 @@ working block, with a stop-and-review checkpoint at the end.** No phase is attem
 single operation.
 
 **Current phase: 9 — Media and contact.** Phases 1–8 complete: the CMS is live and
-every content type is editable at `/admin`.
+every content type is editable at `/admin`. **Phase 9a (media) is complete** and verified
+against a live Blob store; 9b (contact) is next.
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -77,7 +78,8 @@ Outstanding content gaps — these need Bidipta, not invention:
 - [ ] **`outcomes` and `challenges` are empty on every project.** These are what make a
       detail page worth reading, and they cannot be fabricated.
 - [ ] **Confirm B.A. vs B.S.** — currently "Bachelor's degree", accurate either way.
-- [ ] Project screenshots (Phase 9, needs upload support)
+- [ ] **Project screenshots.** Upload support exists as of Phase 9a; the
+      images themselves still need to be taken and uploaded at `/admin`.
 
 ## Phase 4 — Public portfolio
 
@@ -108,7 +110,9 @@ and the filter costs zero JavaScript.
 - [x] Heading hierarchy audited across all seven page types; fixed a
       skipped level on `/projects` (h1 → h3) by making `ProjectCard`'s
       heading level configurable
-- [ ] `next/image` throughout — no images exist yet; lands with Phase 9
+- [x] `next/image` wherever images render — project galleries, card
+      thumbnails, and the hero portrait, added in Phase 9a. Verified against a
+      real Blob-hosted file: `/_next/image` serves it re-encoded.
 - [ ] **Lighthouse ≥ 95 and an axe audit — NOT RUN.** Both need a real
       browser, which is not available in this environment. Must be run
       manually (Chrome DevTools → Lighthouse) before launch.
@@ -230,14 +234,81 @@ proxy cannot see.
 
 ## Phase 9 — Media and contact
 
-- [ ] Vercel Blob; project image upload
-- [ ] Resume upload and `ResumeVersion`
+Split in two, like Phases 6 and 8: media first, contact second. They share almost
+no code, and only the media half needs a real file round-trip verified.
+
+### Phase 9a — Media
+
+- [x] Vercel Blob behind a storage façade (`src/lib/storage.ts`) — no other
+      module imports `@vercel/blob`. See `docs/decisions/0007`.
+- [x] `ProjectImage` model, migration `20260823005742`, gallery CRUD in
+      `/admin/projects/[slug]`
+- [x] Public gallery on project pages; first image is the card thumbnail on
+      Home and Projects
+- [x] `next/image` with `remotePatterns` scoped to Blob subdomains
+- [x] Resume upload, `/admin/resume`, publish toggle and "make current"
+- [x] Uploads validated by magic bytes, not filename or declared type; SVG
+      refused deliberately
+- [x] Profile photo — `Profile.photoUrl`, uploaded at `/admin/profile`, shown
+      in the home hero and added to the `Person` JSON-LD as `image`. Migration
+      `20260823041431`. The seed leaves it untouched on update, so
+      `npm run db:seed` cannot silently wipe an uploaded portrait.
+- [x] **Verified against a real Blob store** — see below.
+- [ ] Upload the actual project screenshots and profile portrait at `/admin`.
+      Needs Bidipta; the files themselves are content, not code.
+
+### Phase 9b — Contact
+
 - [ ] Contact form → Resend + `ContactMessage`
-- [ ] Spam protection and rate limiting
+- [ ] Honeypot, minimum fill time, and a database-backed rate limit keyed on a
+      hashed IP. No Redis — see the over-engineering watch list.
+
+### What is verified, and what is not
+
+With a real store connected, a full round trip was exercised: upload through
+`uploadFile()`, fetch back over HTTP, then delete.
+
+| Check                                                      | Result |
+| ---------------------------------------------------------- | ------ |
+| Uploaded file fetched back, bytes and content-type intact  | pass   |
+| `downloadUrl` responds `content-disposition: attachment`   | pass   |
+| Deleted file returns 404 afterwards                        | pass   |
+| Hostile pathname `../../../etc/pa ss wd?.png` sanitised    | pass   |
+| Home hero renders a Blob URL through `next/image`          | pass   |
+| `/_next/image` optimizes the remote file (200, re-encoded) | pass   |
+| `Person` JSON-LD carries `image` when a photo exists       | pass   |
+
+The test image was deleted from the store and the profile row reset; nothing
+from these checks remains.
+
+Everything that does not require a token was exercised separately, with real
+PNG and JPEG files and hand-built WebP headers:
+
+| Check                                                  | Result |
+| ------------------------------------------------------ | ------ |
+| PNG, JPEG, WebP (VP8 and VP8L) dimensions parsed       | pass   |
+| Non-image returns null instead of throwing             | pass   |
+| SVG renamed `.png`, declared `image/png`, is refused   | pass   |
+| PDF bytes refused where an image is expected, and back | pass   |
+| Empty and oversized files refused                      | pass   |
+| A real PNG passes every check and reaches the upload   | pass   |
+| Auth guard: 17 of 19 actions call `requireAdmin()`     | pass   |
+
+The two unguarded actions are `login` and `logout` in `auth.ts`, which are the
+authentication endpoints themselves and correctly are not guarded.
+
+**Not verified:** the admin screens rendered while signed in — every check
+above went through the actions and queries directly, or through a public page.
+The checks live in scratch scripts rather than the repository; port them into
+the Vitest suite in Phase 10.
 
 ## Phase 10 — Testing and hardening
 
 - [ ] Vitest units (validation, query façade)
+- [ ] **Port the Phase 9a storage checks into Vitest** — magic-byte rejection
+      (including SVG), size limits, and header dimension parsing for PNG,
+      JPEG and WebP. They were run once from a scratch script and are
+      currently protected by nothing.
 - [ ] **Content validation test** — import every collection unconditionally and
       assert it parses. Content schemas currently run only at module import, so
       a collection no page reaches is never validated. Verified by planting a
@@ -270,3 +341,18 @@ proxy cannot see.
 After every meaningful task: verify the result → run typecheck, lint, build, tests →
 inspect for errors → summarize what changed → explain notable decisions → state the next
 task → **stop at phase boundaries for approval**.
+
+**And at every phase boundary, confirm the deployment succeeded.** Not that the push
+happened — that the build went green and a route added in that phase answers in
+production:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://portfolio-ten-theta-d09qbq67e8.vercel.app/login
+```
+
+This exists because Phases 6, 7 and 8 all built cleanly locally, pushed successfully, and
+failed on Vercel — the project had no `DATABASE_URL`, and public pages prerender from the
+database. Vercel serves the last successful build when a new one fails, so the site looked
+healthy while running three phases behind. Discovered during Phase 9a, when `/login`
+returned 404 in production. Fixed by adding `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`
+and `BLOB_READ_WRITE_TOKEN` to the Vercel project.

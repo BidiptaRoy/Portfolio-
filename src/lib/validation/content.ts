@@ -126,6 +126,10 @@ export const resumeVersionSchema = z.object({
   ...contentMeta,
   label: z.string().min(1),
   fileUrl: z.string().min(1),
+  // Default to null so a seeded /public file can simply omit them: they only
+  // have values for a file that was uploaded to Blob.
+  downloadUrl: z.string().min(1).nullable().default(null),
+  pathname: z.string().min(1).nullable().default(null),
   downloadName: z.string().min(1),
   revisedAt: yearMonth,
   isCurrent: z.boolean(),
@@ -146,4 +150,7 @@ export const profileSchema = z.object({
   location: z.string().min(1),
   email: z.email(),
   availability: z.string().min(1).nullable(),
+  // Defaulted so the seed source need not mention it: a photo is uploaded
+  // through /admin, never committed to src/content.
+  photoUrl: z.string().min(1).nullable().default(null),
 });

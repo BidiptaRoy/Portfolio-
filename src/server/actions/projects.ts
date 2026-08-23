@@ -1,11 +1,12 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
-import { projectFormSchema, type FormState } from "@/lib/validation/forms";
+import { deleteFile } from "@/lib/storage";
+import { invalidForm, projectFormSchema, type FormState } from "@/lib/validation/forms";
+import { revalidateProjectPaths } from "@/server/revalidate";
 
 /**
  * Project mutations.
@@ -22,40 +23,12 @@ import { projectFormSchema, type FormState } from "@/lib/validation/forms";
  * an unauthenticated write endpoint. See docs/decisions/0003.
  */
 
-/**
- * Public pages are prerendered, so a database write is invisible until the
- * affected paths are invalidated. Missing one here is the classic "I saved it
- * and the site still shows the old version" bug.
- */
-function revalidateProjectPaths() {
-  revalidatePath("/"); // featured projects on the home page
-  revalidatePath("/projects"); // the index and its filters
-  revalidatePath("/projects/[slug]", "page"); // every detail page
-  revalidatePath("/sitemap.xml"); // slugs are listed there
-}
-
-function toFieldErrors(error: { issues: { path: PropertyKey[]; message: string }[] }) {
-  const fieldErrors: Record<string, string[]> = {};
-
-  for (const issue of error.issues) {
-    const key = issue.path.map(String).join(".") || "form";
-    fieldErrors[key] = [...(fieldErrors[key] ?? []), issue.message];
-  }
-
-  return fieldErrors;
-}
-
 export async function saveProject(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin();
 
   const parsed = projectFormSchema.safeParse(Object.fromEntries(formData));
 
-  if (!parsed.success) {
-    return {
-      error: "Please correct the highlighted fields.",
-      fieldErrors: toFieldErrors(parsed.error),
-    };
-  }
+  if (!parsed.success) return invalidForm(parsed.error);
 
   const data = parsed.data;
 
@@ -96,7 +69,22 @@ export async function setProjectStatus(slug: string, status: "DRAFT" | "PUBLISHE
 export async function deleteProject(slug: string) {
   await requireAdmin();
 
+  // Image ROWS are removed by the cascade on the foreign key; the stored
+  // FILES are not, and nothing else would ever reference them again. Collect
+  // their locations before the delete, because afterwards there is no way
+  // left to find them.
+  const images = await prisma.projectImage.findMany({
+    where: { project: { slug } },
+    select: { url: true },
+  });
+
   await prisma.project.delete({ where: { slug } });
+
+  // Best effort, and after the row is gone: an orphaned file costs a fraction
+  // of a cent, while a storage error here would fail an already-completed
+  // delete and leave the admin looking at an error for work that succeeded.
+  await Promise.all(images.map((image) => deleteFile(image.url)));
+
   revalidateProjectPaths();
   redirect("/admin/projects");
 }

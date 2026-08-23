@@ -1,17 +1,20 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth-guard";
 import { prisma } from "@/lib/db";
+import { deleteFile, uploadFile } from "@/lib/storage";
 import {
   educationFormSchema,
   experienceFormSchema,
+  fieldError,
+  invalidForm,
   profileFormSchema,
   skillFormSchema,
   type FormState,
 } from "@/lib/validation/forms";
+import { revalidateAboutPaths, revalidateExperiencePaths } from "@/server/revalidate";
 
 /**
  * Mutations for Experience, Education, Skills, and Profile.
@@ -25,41 +28,13 @@ import {
  * their own routes and a much larger form; everything here shares one page.
  */
 
-function toFieldErrors(error: { issues: { path: PropertyKey[]; message: string }[] }) {
-  const fieldErrors: Record<string, string[]> = {};
-
-  for (const issue of error.issues) {
-    const key = issue.path.map(String).join(".") || "form";
-    fieldErrors[key] = [...(fieldErrors[key] ?? []), issue.message];
-  }
-
-  return fieldErrors;
-}
-
-const invalid = (error: Parameters<typeof toFieldErrors>[0]): FormState => ({
-  error: "Please correct the highlighted fields.",
-  fieldErrors: toFieldErrors(error),
-});
-
-/** Experience appears on the home page and its own page; both need clearing. */
-function revalidateExperiencePaths() {
-  revalidatePath("/");
-  revalidatePath("/experience");
-}
-
-function revalidateAboutPaths() {
-  revalidatePath("/");
-  revalidatePath("/about");
-  revalidatePath("/contact");
-}
-
 // ── Experience ─────────────────────────────────────────────────────────────
 
 export async function saveExperience(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin();
 
   const parsed = experienceFormSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidForm(parsed.error);
 
   const originalSlug = formData.get("originalSlug");
   const isEdit = typeof originalSlug === "string" && originalSlug.length > 0;
@@ -92,7 +67,7 @@ export async function saveEducation(_prev: FormState, formData: FormData): Promi
   await requireAdmin();
 
   const parsed = educationFormSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidForm(parsed.error);
 
   const originalSlug = formData.get("originalSlug");
   const isEdit = typeof originalSlug === "string" && originalSlug.length > 0;
@@ -125,7 +100,7 @@ export async function saveSkill(_prev: FormState, formData: FormData): Promise<F
   await requireAdmin();
 
   const parsed = skillFormSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidForm(parsed.error);
 
   // Identified by id rather than name, so a skill can be renamed. See the
   // note on AdminSkill in src/server/queries/admin.ts.
@@ -160,7 +135,7 @@ export async function saveProfile(_prev: FormState, formData: FormData): Promise
   await requireAdmin();
 
   const parsed = profileFormSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidForm(parsed.error);
 
   // Singleton: upsert so a missing row self-heals rather than throwing.
   await prisma.profile.upsert({
@@ -174,4 +149,59 @@ export async function saveProfile(_prev: FormState, formData: FormData): Promise
   // No redirect — there is nowhere better to go from a singleton editor. The
   // success flag is what tells the user anything happened at all.
   return { error: null, fieldErrors: {}, success: true };
+}
+
+// ── Profile photo ──────────────────────────────────────────────────────────
+//
+// Kept out of `saveProfile` on purpose. Bundling a file input into that form
+// would re-upload the portrait on every text edit, and a failed upload would
+// then reject a save that had nothing to do with the photo.
+
+export async function uploadProfilePhoto(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    return fieldError("file", "Choose an image to upload.");
+  }
+
+  const uploaded = await uploadFile({ file, kind: "image", pathname: `profile/${file.name}` });
+  if (!uploaded.ok) return fieldError("file", uploaded.message);
+
+  const previous = await prisma.profile.findUnique({
+    where: { id: "singleton" },
+    select: { photoUrl: true, photoPathname: true },
+  });
+
+  await prisma.profile.update({
+    where: { id: "singleton" },
+    data: { photoUrl: uploaded.url, photoPathname: uploaded.pathname },
+  });
+
+  // Replacing a photo makes the old file unreachable, so it goes — but only
+  // after the row points at the new one. The order matters: the reverse would
+  // leave a window where the hero references a file that no longer exists.
+  if (previous?.photoUrl && previous.photoPathname) await deleteFile(previous.photoUrl);
+
+  revalidateAboutPaths();
+
+  return { error: null, fieldErrors: {}, success: true };
+}
+
+export async function removeProfilePhoto() {
+  await requireAdmin();
+
+  const previous = await prisma.profile.findUnique({
+    where: { id: "singleton" },
+    select: { photoUrl: true, photoPathname: true },
+  });
+
+  await prisma.profile.update({
+    where: { id: "singleton" },
+    data: { photoUrl: null, photoPathname: null },
+  });
+
+  if (previous?.photoUrl && previous.photoPathname) await deleteFile(previous.photoUrl);
+
+  revalidateAboutPaths();
 }

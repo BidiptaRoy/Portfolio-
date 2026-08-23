@@ -1,9 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { formatYearMonth } from "@/lib/format";
-import type { Project } from "@/types/content";
+import type { ProjectSummary } from "@/types/content";
 
 /**
  * A project summary card linking to its detail page.
@@ -17,7 +18,7 @@ export function ProjectCard({
   project,
   headingLevel = "h3",
 }: {
-  project: Project;
+  project: ProjectSummary;
   /** Pass "h2" when the grid sits directly under the page h1. */
   headingLevel?: "h2" | "h3";
 }) {
@@ -27,6 +28,25 @@ export function ProjectCard({
         accent={project.featured}
         className="group-hover:border-line-strong flex h-full flex-col gap-3 transition-colors"
       >
+        {/*
+          A card renders identically with or without a thumbnail — projects
+          predate the ability to upload one, and most have none. `alt=""`
+          because the image repeats the title directly beneath it; announcing
+          it twice is noise to a screen reader, and the real alt text is on
+          the detail page where the image carries content.
+        */}
+        {project.cover ? (
+          <div className="bg-surface border-line relative aspect-[16/10] overflow-hidden rounded-md border">
+            <Image
+              src={project.cover.url}
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 24rem, (min-width: 640px) 45vw, 90vw"
+              className="object-cover"
+            />
+          </div>
+        ) : null}
+
         <div className="flex flex-col gap-1">
           {project.completedAt ? (
             <p className="text-ink-muted text-xs tracking-wide uppercase">

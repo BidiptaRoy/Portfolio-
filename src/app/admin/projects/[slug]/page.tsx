@@ -2,15 +2,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ProjectForm } from "@/components/admin/project-form";
+import { ProjectImages } from "@/components/admin/project-images";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { isStorageConfigured } from "@/lib/storage";
 import { deleteProject } from "@/server/actions/projects";
-import { getProjectForAdmin } from "@/server/queries/admin";
+import { getProjectForAdmin, getProjectImagesForAdmin } from "@/server/queries/admin";
 
 export default async function EditProjectPage({ params }: PageProps<"/admin/projects/[slug]">) {
   const { slug } = await params;
-  const project = await getProjectForAdmin(slug);
+  const [project, images] = await Promise.all([
+    getProjectForAdmin(slug),
+    getProjectImagesForAdmin(slug),
+  ]);
 
   if (!project) notFound();
 
@@ -39,6 +44,12 @@ export default async function EditProjectPage({ params }: PageProps<"/admin/proj
       <div className="mt-8">
         <ProjectForm project={project} />
       </div>
+
+      <ProjectImages
+        slug={project.slug}
+        images={images}
+        storageConfigured={isStorageConfigured()}
+      />
 
       <div className="border-line mt-12 border-t pt-6">
         <h2 className="text-ink font-serif text-lg">Delete</h2>

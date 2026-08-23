@@ -22,6 +22,10 @@ export default async function AdminPage() {
     { label: "Experience", value: counts.experience, href: "/admin/experience" },
     { label: "Education", value: counts.education, href: "/admin/education" },
     { label: "Skills", value: counts.skills, href: "/admin/skills" },
+    // Images have no section of their own — they are managed on the project
+    // they belong to, so this tile points at the project list.
+    { label: "Project images", value: counts.images, href: "/admin/projects" },
+    { label: "Resume revisions", value: counts.resumes, href: "/admin/resume" },
   ];
 
   return (
@@ -33,7 +37,7 @@ export default async function AdminPage() {
         lead="Counts include drafts. Every section here is editable without touching code."
       />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map((tile) => {
           const card = (
             <Card className="h-full">
@@ -56,6 +60,17 @@ export default async function AdminPage() {
         <p className="text-ink-muted mt-6 text-sm">
           {counts.drafts} project{counts.drafts === 1 ? "" : "s"} in draft — not visible on the
           public site.
+        </p>
+      ) : null}
+
+      {/*
+        Worth saying out loud: an unpublished resume is a deliberate, supported
+        state, but it is also indistinguishable from having forgotten to
+        publish one. The Resume page silently renders without a download link.
+      */}
+      {counts.publishedResumes === 0 ? (
+        <p className="text-ink-muted mt-2 text-sm">
+          No resume is published — <code>/resume</code> currently offers no download.
         </p>
       ) : null}
 

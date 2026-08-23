@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -96,6 +97,49 @@ export default async function ProjectPage({ params }: PageProps<"/projects/[slug
       </header>
 
       <Rule className="my-10" />
+
+      {/*
+        The gallery sits above the prose because a screenshot answers "what is
+        this?" faster than a paragraph does. Omitted entirely when empty —
+        every project predates uploads, and a placeholder box advertises the
+        gap rather than filling it.
+      */}
+      {project.images.length > 0 ? (
+        <section className="mb-10 flex flex-col gap-6">
+          <h2 className="sr-only">Images</h2>
+
+          {project.images.map((image) => (
+            <figure key={image.id} className="flex flex-col gap-2">
+              <div
+                className="bg-surface border-line relative overflow-hidden rounded-lg border"
+                /*
+                  The intrinsic ratio when it is known, so the space is
+                  reserved before the image loads and nothing jumps. 16/10 is
+                  a fallback for the images whose header could not be parsed;
+                  `object-contain` means a wrong guess letterboxes rather than
+                  crops, which matters for tall UI screenshots.
+                */
+                style={{
+                  aspectRatio:
+                    image.width && image.height ? `${image.width} / ${image.height}` : "16 / 10",
+                }}
+              >
+                <Image
+                  src={image.url}
+                  alt={image.alt}
+                  fill
+                  sizes="(min-width: 768px) 42rem, 92vw"
+                  className="object-contain"
+                />
+              </div>
+
+              {image.caption ? (
+                <figcaption className="text-ink-muted text-sm">{image.caption}</figcaption>
+              ) : null}
+            </figure>
+          ))}
+        </section>
+      ) : null}
 
       <section className="flex flex-col gap-4">
         <h2 className="text-ink font-serif text-2xl">Overview</h2>

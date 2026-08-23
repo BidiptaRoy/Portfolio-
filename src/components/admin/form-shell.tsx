@@ -34,17 +34,30 @@ export function FormShell({
   action,
   submitLabel,
   cancelHref,
+  resetOnSuccess = false,
+  successMessage,
   children,
 }: {
   state: FormState;
   action: (formData: FormData) => void;
   submitLabel: string;
   cancelHref?: string;
+  /**
+   * Clear the form after a successful submit. For forms that are used
+   * repeatedly — uploading four screenshots in a row — where leaving the
+   * previous entry in place invites accidentally submitting it twice.
+   */
+  resetOnSuccess?: boolean;
+  successMessage?: string;
   children: React.ReactNode;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const firstErrorField = Object.keys(state.fieldErrors)[0];
   const hasErrors = Boolean(state.error) || Boolean(firstErrorField);
+
+  useEffect(() => {
+    if (resetOnSuccess && state.success) formRef.current?.reset();
+  }, [resetOnSuccess, state]);
 
   useEffect(() => {
     if (!hasErrors) return;
@@ -79,7 +92,7 @@ export function FormShell({
 
       {state.success ? (
         <p role="status" className="border-line text-ink rounded-md border px-3 py-2 text-sm">
-          Saved. The public site has been updated.
+          {successMessage ?? "Saved. The public site has been updated."}
         </p>
       ) : null}
 

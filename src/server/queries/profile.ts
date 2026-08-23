@@ -16,6 +16,7 @@ export async function getProfile(): Promise<Profile> {
       location: true,
       email: true,
       availability: true,
+      photoUrl: true,
     },
   });
 

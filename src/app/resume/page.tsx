@@ -27,7 +27,18 @@ export default async function ResumePage() {
       {resume ? (
         <>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href={resume.fileUrl} download={resume.downloadName} className={buttonStyles()}>
+            {/*
+              `download` is IGNORED cross-origin, so it does nothing at all
+              for a file hosted on Blob — the button would quietly become
+              "open in this tab". Blob serves a separate URL that sets
+              `content-disposition: attachment` instead; the attribute is
+              still correct for a file under /public, where it works.
+            */}
+            <a
+              href={resume.downloadUrl ?? resume.fileUrl}
+              download={resume.downloadUrl ? undefined : resume.downloadName}
+              className={buttonStyles()}
+            >
               Download PDF
             </a>
             <a

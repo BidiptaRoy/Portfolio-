@@ -23,10 +23,27 @@ professional services offered via Taskrabbit. That area is planned but not built
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
 - **Current phase:** Phase 9 (Media and contact). Phases 1–8 complete — every content
-  type is editable at `/admin` without touching code. See `docs/roadmap.md`.
+  type is editable at `/admin` without touching code. **9a (media) is complete**: project
+  galleries, the profile portrait, and resume revisions all upload to Vercel Blob,
+  verified end to end against a live store. 9b (the contact form) is next.
+  See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
+
+> **A green build locally is not a deployment.** Phases 6, 7 and 8 all shipped to GitHub and
+> all failed to build on Vercel, for want of `DATABASE_URL` in the project's environment —
+> public pages prerender from the database, so the build reaches Postgres. Vercel keeps
+> serving the last successful build at the production URL, so the site looked fine while
+> being three phases stale. It was caught only when `/login` turned out to 404 in production.
+>
+> **Every environment variable this app reads must exist in the Vercel project**, not only in
+> `.env.local`: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`,
+> `NEXT_PUBLIC_SITE_URL`. Paste values WITHOUT the surrounding quotes — those are dotenv
+> syntax, and the dashboard stores the literal string.
+>
+> **At every phase boundary, check that the deployment actually succeeded** and that a route
+> added in that phase responds in production. That check is what three phases went without.
 
 ---
 
@@ -38,8 +55,9 @@ frontend and backend; Server Components read data, Server Actions write it.
 ```
 Public routes (Server Components, cached)
       └── src/server/queries/*   ← READ FAÇADE. Pages call these, never a data source.
-/admin (future)
+/admin
       └── src/server/actions/*   ← WRITE LAYER. Auth check, then Zod parse, then mutate.
+              └── src/lib/storage.ts  ← STORAGE FAÇADE. Files, never a provider SDK.
 ```
 
 **The single most important convention in this repo:** pages and components never import
@@ -51,9 +69,10 @@ to Prisma in Phase 6 **without a single component changing**. Do not bypass this
 `src/content/` is now the **seed source, not the runtime source.** Editing a file there
 changes nothing on the site until `npm run db:seed` runs.
 
-**Rendering and staleness:** public pages are prerendered at build time from the database,
-so a row edited directly in the database does not appear until the next deploy. On-demand
-revalidation arrives in Phase 8, alongside the mutations that need it.
+**Rendering and staleness:** public pages are prerendered at build time from the database.
+An edit made through `/admin` appears immediately, because every mutation revalidates the
+paths built from it — see `src/server/revalidate.ts`. A row edited **directly** in the
+database bypasses that and does not appear until the next deploy.
 
 Full reasoning: `docs/architecture.md`. Decisions: `docs/decisions/`.
 
@@ -116,6 +135,9 @@ src/
   lib/
     navigation.ts       Primary nav, single source for header and footer
     utils.ts            cn() — clsx + tailwind-merge
+    storage.ts          ★ Storage façade. The ONLY module that imports
+                        @vercel/blob. Validates uploads by magic bytes and
+                        reads image dimensions from file headers.
     validation/
       content.ts        Zod schemas for every content entity. Content modules
                         parse with these at import, so bad data fails the build.
@@ -128,7 +150,10 @@ src/
                         Selects explicit fields so results are structurally the
                         domain types and internal columns never leak out.
                         Guarded with `import "server-only"`.
-    actions/            Server Actions (writes). Empty until Phase 8.
+    actions/            Server Actions (writes). auth, projects, project-images,
+                        resume, content (experience/education/skills/profile).
+    revalidate.ts       Which paths each kind of edit invalidates. Shared, so
+                        two action files writing the same content cannot drift.
   types/
     content.ts          Domain model. The shape the Prisma models will implement.
 docs/
@@ -163,7 +188,17 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
 - **Be liberal in what date input you accept.** `normalizeYearMonth` reads `2025`,
   `2025-6`, `6/2025`, and `June 2025`. Rejecting a reasonable format is a bug.
 - **Every content model** carries `status: DRAFT | PUBLISHED`, `sortOrder`, and timestamps.
-  Public queries filter to `PUBLISHED`.
+  Public queries filter to `PUBLISHED`. The single exception is `ProjectImage`, whose
+  visibility is its project's — see `docs/decisions/0007` before adding a second one.
+- **Never import `@vercel/blob` outside `src/lib/storage.ts`.** Actions call `uploadFile()`
+  and `deleteFile()`. Same seam, same reason, as the query façade.
+- **Uploads are validated by their bytes, not their names.** A declared MIME type and a
+  file extension both come from the client. SVG is refused on purpose: it can carry
+  script and is served from a URL the visitor's browser trusts.
+- **Store the file before the row, and delete the row before the file.** An orphaned file
+  costs a fraction of a cent; a row pointing at a file that does not exist is a broken
+  image on a public page.
+- **Alt text is required on every uploaded image** — a column, not an optional field.
 - **Validate on the server regardless of client validation.** Client validation is UX.
 - **No `dangerouslySetInnerHTML`** except for vetted JSON-LD. Markdown must be sanitized.
 - **Design tokens are CSS custom properties** in `globals.css`. Never write a hex value in a
@@ -185,7 +220,11 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
 ## Environment variables
 
 Documented in `.env.example`, which is committed and must stay current. Copy it to
-`.env.local` (gitignored) for local work. Only `NEXT_PUBLIC_SITE_URL` is read today.
+`.env.local` (gitignored) for local work.
+
+Read today: `NEXT_PUBLIC_SITE_URL`, `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, and
+`BLOB_READ_WRITE_TOKEN`. The last is the only optional one — without it the admin hides
+its upload forms and says storage is not configured; nothing else changes.
 
 ---
 

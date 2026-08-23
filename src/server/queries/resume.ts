@@ -15,6 +15,8 @@ export async function getCurrentResume(): Promise<ResumeVersion | null> {
   const fields = {
     label: true,
     fileUrl: true,
+    downloadUrl: true,
+    pathname: true,
     downloadName: true,
     revisedAt: true,
     isCurrent: true,

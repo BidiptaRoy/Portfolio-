@@ -33,6 +33,10 @@ export function PersonJsonLd({
     email: `mailto:${profile.email}`,
     url: siteUrl,
     address: { "@type": "PostalAddress", addressLocality: profile.location },
+    // Omitted rather than sent as null when there is no photo: schema.org
+    // consumers treat an empty property as a broken one, and `image` is what
+    // a knowledge panel shows beside the name.
+    ...(profile.photoUrl ? { image: profile.photoUrl } : {}),
     alumniOf: education.map((entry) => ({
       "@type": "CollegeOrUniversity",
       name: entry.institution,
