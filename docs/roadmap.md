@@ -6,8 +6,8 @@ single operation.
 
 **Phase 9 complete. Current phase: 10 — Testing and hardening.** The CMS is live, every
 content type is editable at `/admin`, media uploads to Vercel Blob, and the contact form
-accepts and stores messages. One thing outstanding from 9b: `RESEND_API_KEY` is unset, so
-messages arrive without an email notification — the admin says so in two places.
+accepts, stores, and emails messages. Outstanding from 9b: `RESEND_API_KEY` exists locally
+but **not yet in the Vercel project**, so production saves messages without notifying.
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -280,9 +280,15 @@ no code, and only the media half needs a real file round-trip verified.
 - [x] Honeypot, minimum fill time, and a database-backed rate limit keyed on a
       salted IP hash. No Redis, and no captcha.
 - [x] `/admin/messages` inbox — read/unread, delete, reply-by-mailto
-- [ ] Set `RESEND_API_KEY` in `.env.local` and Vercel. Until then the form
-      works and stores everything; nothing is emailed, and both the dashboard
-      and the inbox say so.
+- [x] `RESEND_API_KEY` set locally; a real notification was accepted by
+      Resend and `notifiedAt` stamped through the live form.
+- [ ] Add `RESEND_API_KEY` to the **Vercel** project. Until it is there,
+      production stores messages and emails nothing — the dashboard and inbox
+      both say so, but only if someone looks.
+- [ ] Verify a notification actually **lands in the inbox**, not just that
+      Resend accepted it. With no verified domain, Resend delivers only to
+      the address the account was registered with; anything else is dropped
+      after a successful-looking API call.
 
 Verified against the running application, driving the real Server Action over
 HTTP the way a browser with JavaScript disabled does:
@@ -293,7 +299,8 @@ HTTP the way a browser with JavaScript disabled does:
 | A filled honeypot writes nothing                              | pass   |
 | A submission on page-load writes nothing                      | pass   |
 | An invalid email writes nothing                               | pass   |
-| Message saved, notification failure logged, `notifiedAt` null | pass   |
+| With no key: saved, failure logged, `notifiedAt` left null    | pass   |
+| With a key: `notifiedAt` stamped via `after()` after response | pass   |
 | 5th message in an hour from one sender is blocked             | pass   |
 | A different sender is unaffected by that block                | pass   |
 | Sender allowed again once messages age out of the window      | pass   |

@@ -25,7 +25,8 @@ professional services offered via Taskrabbit. That area is planned but not built
 - **Current phase:** Phase 9 complete — **Phase 10 (testing and hardening) is next.**
   Phases 1–8 built the CMS; 9a put project galleries, the profile portrait, and resume
   revisions on Vercel Blob; 9b added the contact form, its inbox, and its spam defences.
-  Outstanding: set `RESEND_API_KEY` to turn on email notifications. See `docs/roadmap.md`.
+  Outstanding: `RESEND_API_KEY` is set locally but not on Vercel, so production stores
+  messages without emailing them. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
