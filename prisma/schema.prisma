@@ -255,6 +255,45 @@ model SocialLink {
   updatedAt DateTime      @updatedAt
 }
 
+/// A message sent through the public contact form.
+///
+/// NOT a content model, which is why it has no `status` or `sortOrder`
+/// despite the rule in CLAUDE.md. Nothing here is ever published; this is an
+/// inbox, and the only state a message has is whether it has been read.
+///
+/// **This table is the system of record, not the email.** The notification to
+/// Bidipta is a convenience layered on top: if Resend is misconfigured, over
+/// quota, or down, the row is still written and the message is still readable
+/// at /admin/messages. A contact form that loses messages when a third party
+/// has a bad day is worse than no contact form, because the sender believes
+/// they were heard.
+model ContactMessage {
+  id      String  @id @default(cuid())
+  name    String
+  email   String
+  subject String?
+  message String
+
+  /// SHA-256 of the sender's IP with a domain-separated secret — never the
+  /// raw address. Enough to rate-limit and to recognise a repeat flooder,
+  /// not enough to identify or track anyone. See src/server/rate-limit.ts.
+  ipHash    String?
+  userAgent String?
+
+  read Boolean @default(false)
+  /// When the notification email was accepted by the provider. Null means it
+  /// was never sent — an unconfigured key, a failure, or a send still in
+  /// flight. The admin inbox surfaces this, so a silent email failure cannot
+  /// masquerade as "no one has written to me".
+  notifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  /// Serves the rate-limit lookup: recent messages from one sender.
+  @@index([ipHash, createdAt])
+}
+
 model ResumeVersion {
   id           String  @id @default(cuid())
   label        String

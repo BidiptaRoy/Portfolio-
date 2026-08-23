@@ -295,6 +295,48 @@ export const profileFormSchema = z.object({
 });
 
 /**
+ * The public contact form — the only schema here parsing input from someone
+ * who is not the admin.
+ *
+ * Lengths are capped on every field. Elsewhere in this file an unbounded
+ * string is fine because the only person typing is the site's owner; here an
+ * unbounded field is a free way to write megabytes into the database.
+ */
+export const contactFormSchema = z.object({
+  name: z.string().trim().min(1, "Required").max(120, "That name is too long"),
+  email: z.email("Enter an email address so a reply can reach you").max(200),
+  subject: optionalText.refine(
+    (value) => value === null || value.length <= 160,
+    "Keep the subject under 160 characters",
+  ),
+  message: z
+    .string()
+    .trim()
+    .min(10, "A little more detail, please")
+    .max(5000, "Please keep it under 5000 characters"),
+});
+
+/**
+ * The hidden field name the honeypot uses.
+ *
+ * Named for something a form-filling bot wants to complete, and something no
+ * person will ever see — it is hidden from sight AND from assistive
+ * technology, so a screen-reader user cannot be tricked into failing it.
+ * A human filling this in is impossible; a bot filling it in is routine.
+ */
+export const HONEYPOT_FIELD = "website";
+
+/**
+ * How quickly a submission is treated as automated.
+ *
+ * A speed bump, not a boundary. The timestamp is set in the browser and can
+ * be forged by anything that bothers to look, so this only filters bots that
+ * post the form the instant they parse it. The rate limit in
+ * src/server/rate-limit.ts is the control that actually holds.
+ */
+export const MIN_FILL_MILLISECONDS = 3000;
+
+/**
  * The shape a form action returns to `useActionState`.
  *
  * Declared here rather than beside the action because a `"use server"` module

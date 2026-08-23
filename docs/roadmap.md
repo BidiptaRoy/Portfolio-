@@ -4,9 +4,10 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Current phase: 9 — Media and contact.** Phases 1–8 complete: the CMS is live and
-every content type is editable at `/admin`. **Phase 9a (media) is complete** and verified
-against a live Blob store; 9b (contact) is next.
+**Phase 9 complete. Current phase: 10 — Testing and hardening.** The CMS is live, every
+content type is editable at `/admin`, media uploads to Vercel Blob, and the contact form
+accepts and stores messages. One thing outstanding from 9b: `RESEND_API_KEY` is unset, so
+messages arrive without an email notification — the admin says so in two places.
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -90,7 +91,8 @@ Outstanding content gaps — these need Bidipta, not invention:
 - [x] Projects index with technology filtering, driven by `?tech=` in the URL
 - [x] Project detail `[slug]` — prerendered per project; Outcomes, Challenges,
       and My role are omitted entirely when empty
-- [x] Contact — mailto and social links; the form is Phase 9
+- [x] Contact — mailto and social links; the form arrived in Phase 9b and sits
+      alongside the mailto rather than replacing it
 
 **Phase 4 complete.** `/projects` is the only dynamic route, because reading
 `searchParams` opts out of prerendering. Accepted deliberately: a shareable
@@ -212,8 +214,17 @@ Get-ChildItem src/server/actions -Filter *.ts | ForEach-Object {
 }
 ```
 
-Last run: 10 of 10 mutating actions guarded. `login` and `logout` in `auth.ts`
-are the authentication endpoints themselves and correctly are not.
+Last run (Phase 9b): 24 mutating actions, 21 guarded. **Three are unguarded on
+purpose** and any fourth is a bug:
+
+- `login` and `logout` in `auth.ts` — the authentication endpoints themselves.
+- `submitContactMessage` in `actions/contact.ts` — the public contact form. A
+  contact form that requires you to be the site's owner is not a contact form.
+  Its boundary is a honeypot, a timing check, length-capped validation, and a
+  database-backed rate limit. See `docs/decisions/0008`.
+
+The admin-only inbox actions live in `actions/contact-admin.ts`, separate from
+the public one, so that the unguarded file stays short enough to read in full.
 
 ### Layer 3 verification
 
@@ -259,9 +270,37 @@ no code, and only the media half needs a real file round-trip verified.
 
 ### Phase 9b — Contact
 
-- [ ] Contact form → Resend + `ContactMessage`
-- [ ] Honeypot, minimum fill time, and a database-backed rate limit keyed on a
-      hashed IP. No Redis — see the over-engineering watch list.
+- [x] `ContactMessage` model, migration `20260823055253`
+- [x] Contact form on `/contact`, alongside the mailto rather than replacing it
+- [x] Resend behind an email façade (`src/lib/email.ts`); notification sent in
+      `after()` so nobody waits on it
+- [x] **The database is the record, email is a notification** — a message is
+      never lost to a mail outage, and the dashboard counts any that were
+      saved without being emailed. See `docs/decisions/0008`.
+- [x] Honeypot, minimum fill time, and a database-backed rate limit keyed on a
+      salted IP hash. No Redis, and no captcha.
+- [x] `/admin/messages` inbox — read/unread, delete, reply-by-mailto
+- [ ] Set `RESEND_API_KEY` in `.env.local` and Vercel. Until then the form
+      works and stores everything; nothing is emailed, and both the dashboard
+      and the inbox say so.
+
+Verified against the running application, driving the real Server Action over
+HTTP the way a browser with JavaScript disabled does:
+
+| Check                                                         | Result |
+| ------------------------------------------------------------- | ------ |
+| A genuine submission is stored, unread, with a 64-char hash   | pass   |
+| A filled honeypot writes nothing                              | pass   |
+| A submission on page-load writes nothing                      | pass   |
+| An invalid email writes nothing                               | pass   |
+| Message saved, notification failure logged, `notifiedAt` null | pass   |
+| 5th message in an hour from one sender is blocked             | pass   |
+| A different sender is unaffected by that block                | pass   |
+| Sender allowed again once messages age out of the window      | pass   |
+| A sender with no resolvable IP is allowed, not punished       | pass   |
+| Over-long, too-short, and malformed input rejected            | pass   |
+
+All test rows were deleted; the table is empty.
 
 ### What is verified, and what is not
 
@@ -314,6 +353,9 @@ the Vitest suite in Phase 10.
       a collection no page reaches is never validated. Verified by planting a
       duplicate slug in `education.ts`: the build passed. See
       `src/lib/validation/content.ts`.
+- [ ] **Port the Phase 9b contact checks into Vitest** — rate limit windows,
+      honeypot, timing trap, and the length caps. They were driven once
+      against a running server from a scratch script.
 - [ ] Playwright e2e: login, and create → publish → appears publicly
 - [ ] GitHub Actions CI; branch protection on `main`
 - [ ] Rate limiting, security headers, CSP

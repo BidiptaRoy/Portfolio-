@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/layout/container";
+import { ContactForm } from "@/components/portfolio/contact-form";
 import { buttonStyles } from "@/components/ui/button";
+import { Rule } from "@/components/ui/rule";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getProfile, getSocialLinks } from "@/server/queries/profile";
 
@@ -27,19 +29,28 @@ export default async function ContactPage() {
 
       <div className="mt-8 flex flex-col gap-6">
         <p className="text-ink-muted leading-relaxed">
-          The fastest way to reach me is email — I reply quickly. Happy to talk about engineering
-          roles, collaboration on a project, or independent professional services.
+          Happy to talk about engineering roles, collaboration on a project, or independent
+          professional services. Send a message here and it reaches me directly.
         </p>
 
+        <ContactForm email={profile.email} />
+
+        <Rule className="my-2" />
+
         {/*
-          A real mailto rather than a form. The contact form, its rate limiting,
-          and spam protection are Phase 9; shipping a form that silently drops
-          messages would be worse than not having one. The address is already
-          public on GitHub and LinkedIn, so exposing it here costs nothing new.
+          The mailto stays. A form is a request to trust a stranger's server
+          with your message and hope; some people would simply rather use
+          their own mail client, and the address is already public on GitHub
+          and LinkedIn, so showing it costs nothing.
         */}
-        <a href={`mailto:${profile.email}`} className={buttonStyles({ className: "self-start" })}>
-          {profile.email}
-        </a>
+        <div className="flex flex-col gap-2">
+          <p className="text-ink-muted text-xs font-medium tracking-[0.18em] uppercase">
+            Or email directly
+          </p>
+          <a href={`mailto:${profile.email}`} className={buttonStyles({ className: "self-start" })}>
+            {profile.email}
+          </a>
+        </div>
 
         {elsewhere.length > 0 ? (
           <div className="flex flex-col gap-2">

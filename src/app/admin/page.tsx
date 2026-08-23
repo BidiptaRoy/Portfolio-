@@ -26,6 +26,7 @@ export default async function AdminPage() {
     // they belong to, so this tile points at the project list.
     { label: "Project images", value: counts.images, href: "/admin/projects" },
     { label: "Resume revisions", value: counts.resumes, href: "/admin/resume" },
+    { label: "Unread messages", value: counts.unreadMessages, href: "/admin/messages" },
   ];
 
   return (
@@ -71,6 +72,18 @@ export default async function AdminPage() {
       {counts.publishedResumes === 0 ? (
         <p className="text-ink-muted mt-2 text-sm">
           No resume is published — <code>/resume</code> currently offers no download.
+        </p>
+      ) : null}
+
+      {/*
+        A message that arrived but was never emailed is the failure mode this
+        whole design is built around: the message is safe, but nothing told
+        anyone it exists. It must be visible somewhere that gets looked at.
+      */}
+      {counts.unsentNotifications > 0 ? (
+        <p className="text-ink-muted mt-2 text-sm">
+          {counts.unsentNotifications} message{counts.unsentNotifications === 1 ? "" : "s"} saved
+          without an email notification — check <code>RESEND_API_KEY</code>.
         </p>
       ) : null}
 

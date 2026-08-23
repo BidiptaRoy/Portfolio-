@@ -19,6 +19,7 @@ const sections = [
   { href: "/admin/skills", label: "Skills", ready: true },
   { href: "/admin/resume", label: "Resume", ready: true },
   { href: "/admin/profile", label: "Profile", ready: true },
+  { href: "/admin/messages", label: "Messages", ready: true },
 ];
 
 export function AdminNav() {

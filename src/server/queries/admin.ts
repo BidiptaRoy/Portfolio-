@@ -128,6 +128,42 @@ export async function getResumeVersionsForAdmin(): Promise<AdminResumeVersion[]>
   });
 }
 
+/**
+ * The contact inbox, newest first.
+ *
+ * `ipHash` and `userAgent` are not selected. They exist to rate-limit, not to
+ * profile anyone, and putting them on screen would invite treating them as
+ * information about a person rather than as a counter.
+ */
+export type AdminMessage = {
+  id: string;
+  name: string;
+  email: string;
+  subject: string | null;
+  message: string;
+  read: boolean;
+  notifiedAt: Date | null;
+  createdAt: Date;
+};
+
+export async function getMessagesForAdmin(): Promise<AdminMessage[]> {
+  await requireAdmin();
+
+  return prisma.contactMessage.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      subject: true,
+      message: true,
+      read: true,
+      notifiedAt: true,
+      createdAt: true,
+    },
+  });
+}
+
 const experienceFields = {
   slug: true,
   kind: true,
@@ -246,17 +282,43 @@ export async function getProfileForAdmin(): Promise<AdminProfile | null> {
 export async function getAdminCounts() {
   await requireAdmin();
 
-  const [projects, drafts, experience, education, skills, images, resumes, publishedResumes] =
-    await Promise.all([
-      prisma.project.count(),
-      prisma.project.count({ where: { status: "DRAFT" } }),
-      prisma.experience.count(),
-      prisma.education.count(),
-      prisma.skill.count(),
-      prisma.projectImage.count(),
-      prisma.resumeVersion.count(),
-      prisma.resumeVersion.count({ where: { status: "PUBLISHED" } }),
-    ]);
+  const [
+    projects,
+    drafts,
+    experience,
+    education,
+    skills,
+    images,
+    resumes,
+    publishedResumes,
+    unreadMessages,
+    unsentNotifications,
+  ] = await Promise.all([
+    prisma.project.count(),
+    prisma.project.count({ where: { status: "DRAFT" } }),
+    prisma.experience.count(),
+    prisma.education.count(),
+    prisma.skill.count(),
+    prisma.projectImage.count(),
+    prisma.resumeVersion.count(),
+    prisma.resumeVersion.count({ where: { status: "PUBLISHED" } }),
+    prisma.contactMessage.count({ where: { read: false } }),
+    // Messages that were saved but never emailed. Surfaced on the dashboard
+    // because a broken notification pipeline is otherwise indistinguishable
+    // from an empty inbox.
+    prisma.contactMessage.count({ where: { notifiedAt: null } }),
+  ]);
 
-  return { projects, drafts, experience, education, skills, images, resumes, publishedResumes };
+  return {
+    projects,
+    drafts,
+    experience,
+    education,
+    skills,
+    images,
+    resumes,
+    publishedResumes,
+    unreadMessages,
+    unsentNotifications,
+  };
 }

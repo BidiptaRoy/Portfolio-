@@ -22,11 +22,10 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 9 (Media and contact). Phases 1–8 complete — every content
-  type is editable at `/admin` without touching code. **9a (media) is complete**: project
-  galleries, the profile portrait, and resume revisions all upload to Vercel Blob,
-  verified end to end against a live store. 9b (the contact form) is next.
-  See `docs/roadmap.md`.
+- **Current phase:** Phase 9 complete — **Phase 10 (testing and hardening) is next.**
+  Phases 1–8 built the CMS; 9a put project galleries, the profile portrait, and resume
+  revisions on Vercel Blob; 9b added the contact form, its inbox, and its spam defences.
+  Outstanding: set `RESEND_API_KEY` to turn on email notifications. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -138,6 +137,9 @@ src/
     storage.ts          ★ Storage façade. The ONLY module that imports
                         @vercel/blob. Validates uploads by magic bytes and
                         reads image dimensions from file headers.
+    email.ts            ★ Email façade. The ONLY module that imports resend.
+                        Never throws — sending is a notification, not a
+                        precondition for anything succeeding.
     validation/
       content.ts        Zod schemas for every content entity. Content modules
                         parse with these at import, so bad data fails the build.
@@ -154,6 +156,9 @@ src/
                         resume, content (experience/education/skills/profile).
     revalidate.ts       Which paths each kind of edit invalidates. Shared, so
                         two action files writing the same content cannot drift.
+    rate-limit.ts       Database-backed limit for the contact form. Counts
+                        rows, not memory — an in-memory counter is per-instance
+                        on serverless and therefore no limit at all.
   types/
     content.ts          Domain model. The shape the Prisma models will implement.
 docs/
@@ -174,6 +179,13 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
 - **Every Server Action** starts with `await requireAdmin()` from `src/lib/auth-guard.ts`,
   then Zod-parses its input, then mutates, then revalidates. In that order, every time.
   A Server Action compiles to a public POST endpoint — the proxy never sees it.
+- **Exactly three actions are unguarded, and a fourth is a bug:** `login` and `logout`
+  (the auth endpoints), and `submitContactMessage` (the public contact form, whose
+  boundary is a honeypot, a timing check, capped validation, and a database-backed rate
+  limit — see `docs/decisions/0008`). The public write lives alone in
+  `src/server/actions/contact.ts`; its admin counterparts are in `contact-admin.ts`, so
+  the unguarded file stays short enough to read in full. Re-run the audit in
+  `docs/roadmap.md` after touching any action.
 - **`"use server"` files may only export async functions.** Shared types and constants
   (form state, initial values) live in `src/lib/validation/forms.ts`. Exporting a plain
   object from an actions file fails the build.
