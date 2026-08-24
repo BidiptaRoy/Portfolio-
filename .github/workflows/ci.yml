@@ -111,3 +111,87 @@ jobs:
       # against real rows.
       - name: Build
         run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # End-to-end tests.
+  #
+  # A separate job, after Verify, for three reasons: it is much slower than the
+  # gate above, its failures mean something different (a broken user journey
+  # rather than a broken commit), and CI minutes are not worth spending driving
+  # a browser through a commit that does not even typecheck.
+  #
+  # This is also the only place the suite runs unattended. Locally it needs
+  # E2E_DATABASE_URL pointed at a throwaway database, because development and
+  # production currently share one Neon database — see
+  # tests/e2e/support/database.ts. Here the throwaway database is the whole
+  # point of the service container, so there is nothing to be careful about.
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    needs: verify
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          # Deliberately a different database name from the Verify job's. These
+          # are separate containers in separate jobs and could not collide
+          # anyway, but the name is what the e2e guard compares, and keeping
+          # them distinct means the guard is never a step away from tripping.
+          POSTGRES_DB: portfolio_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # ONLY the E2E_ variables. DATABASE_URL is deliberately left unset: the
+      # suite must never read it, and leaving it undefined here means that if
+      # anything ever does, it fails loudly instead of quietly using the wrong
+      # database. playwright.config.ts supplies the app's DATABASE_URL to the
+      # server it starts, from these values.
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/portfolio_e2e
+      E2E_DIRECT_URL: postgresql://postgres:postgres@localhost:5432/portfolio_e2e
+      CI: "true"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      # Chromium only — see the note on `projects` in playwright.config.ts.
+      # `--with-deps` installs the system libraries a headless browser needs,
+      # which the GitHub runner does not have by default.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # This migrates and seeds the test database, builds, starts the server,
+      # and runs the suite against it. All of that is in `e2e:server` and the
+      # Playwright config rather than spelled out here, so that running the
+      # tests locally and running them in CI are the same operation.
+      - name: End-to-end tests
+        run: npm run e2e
+
+      # The report is how you find out WHAT failed without reproducing it
+      # locally, so it is uploaded on failure — traces and screenshots included.
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

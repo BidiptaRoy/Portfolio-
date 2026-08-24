@@ -7,9 +7,23 @@ single operation.
 **Phase 10a complete. Current phase: 10b — Playwright, CI, and hardening.** The CMS is live,
 every content type is editable at `/admin`, media uploads to Vercel Blob, the contact form
 accepts, stores, and emails messages, and 187 unit tests now guard the checks that were
-previously run once from scratch scripts. Outstanding from 9b: `RESEND_API_KEY` exists
-locally but **not yet in the Vercel project**, so production saves messages without
-notifying.
+previously run once from scratch scripts. Login rate limiting landed, and Playwright is
+green — 13 end-to-end tests covering the auth boundary, every admin screen signed in,
+create → publish → appears publicly, and a CSP check in a real browser. Outstanding from 9b:
+`RESEND_API_KEY` exists locally but **not yet in the Vercel project**, so production saves
+messages without notifying.
+
+The e2e suite runs against a dedicated Neon branch named `e2e`, never the application's
+own database — see the warning below and `docs/decisions/0011`. Set `E2E_DATABASE_URL`
+and `E2E_DIRECT_URL` in `.env.local`; `npm run e2e` refuses to start without them.
+
+> ⚠ **Found while setting up Playwright: there is only one database.** `.env.local` and
+> the Vercel project both point at the same Neon database, so "local development" and
+> "production content" are the same rows. That was survivable while nothing wrote to it
+> automatically; an e2e suite that creates and publishes projects changes the stakes, and
+> `/projects` is dynamic, so a stray test project would be served publicly. The suite
+> refuses to run against it (`docs/decisions/0011`), but the underlying condition is
+> Phase 11's to fix.
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -428,10 +442,35 @@ yet evidence of anything.
 - [ ] **Branch protection on `main`** — needs the GitHub dashboard; there is no
       `gh` CLI on this machine. Require the `Verify` check above, and require a
       PR. See the note at the end of this phase.
-- [ ] Playwright e2e: login, and create → publish → appears publicly
-- [ ] **The admin screens rendered while signed in** — still covered by nothing
-      but manual use. Every automated check to date drives actions and queries
-      directly, or reads a public page. This is the largest remaining test gap.
+- [x] **Playwright installed and configured** — Chromium only, against a
+      production build (`npm run e2e`). Four specs written: the auth boundary,
+      every admin screen signed in, create → publish → appears publicly, and a
+      CSP check in a real browser. `.github/workflows/ci.yml` runs them in a
+      second job against a throwaway Postgres.
+- [x] **Suite run and green — 13 tests, ~40s**, against a dedicated Neon branch
+      (`e2e`). Three genuine failures on the first two runs, all worth having:
+      `getByRole("alert")` also matches Next's `__next-route-announcer__` on
+      every page; the cleanup hook re-ran `signIn()` on a page that already had
+      a session and hung waiting for a login form that redirects away; and the
+      unpublish assertion, below.
+- [x] **The admin screens rendered while signed in — closed.** All 12 static
+      admin routes plus the four edit screens, reached by clicking the lists so
+      the links are tested too. Every automated check before this drove actions
+      and queries directly, or read a public page; none had ever rendered an
+      admin screen.
+- [x] **Verified by mutation.** Removing `revalidateProjectPaths()` from
+      `setProjectStatus` turned `publish.spec.ts` red and nothing else, then was
+      reverted. The suite is therefore known to test revalidation rather than
+      merely to exercise it.
+
+> **Finding: unpublishing is not instantaneous.** The first request to
+> `/projects/[slug]` after unpublishing returns 200 with the stale page; every
+> one after returns 404. Identical via a raw fetch, so it is Next's
+> stale-while-revalidate, not the browser cache. One visitor can still see a
+> project after it is taken down. Accepted, documented in `CLAUDE.md`, and the
+> spec polls rather than asserting on the first response — asserting otherwise
+> would encode a promise Next does not make.
+
 - [ ] Edge rate limiting — in front of the database-backed limit in
       `src/server/rate-limit.ts`, not replacing it
 - [x] **Login rate limiting** — the gap Phase 7 flagged as the largest in the
@@ -450,7 +489,23 @@ yet evidence of anything.
 - [ ] **Confirm no CSP violations in a browser console.** The policy was
       verified by auditing the built markup — every off-origin reference, every
       inline script, every style attribute — but not by loading a page in a real
-      browser. Do this on the preview deployment before it reaches production.
+      browser. `tests/e2e/security-headers.spec.ts` now automates exactly this,
+      across the six public routes and four admin ones, and fails on any
+      console error matching a CSP refusal or a blocked request. It closes this
+      item **once it has run** — which is the same blocker as the rest of the
+      suite. Still worth one manual look at the preview deployment, because the
+      spec only visits pages it knows about.
+      **Ran green on the first attempt** across `/`, `/about`, `/experience`,
+      `/projects`, `/resume` and `/contact`, plus four admin screens — so the
+      Phase 10b audit of the built markup was correct, including the two
+      deliberate deviations below. What remains is a human looking at a preview
+      deployment, since the spec only knows the pages it was told about.
+
+#### Branch protection should require both checks
+
+CI now has two jobs: **Verify** (the commit gate, plus migrate-seed-build against an
+empty database) and **End-to-end**. The branch protection rule described below
+was written when there was only one; require both.
 
 #### What the CSP audit found, and why it is not the textbook policy
 

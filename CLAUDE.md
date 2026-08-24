@@ -25,9 +25,10 @@ professional services offered via Taskrabbit. That area is planned but not built
 - **Current phase:** Phase 10 in progress. Phases 1–8 built the CMS; 9a put project
   galleries, the profile portrait, and resume revisions on Vercel Blob; 9b added the contact
   form, its inbox, and its spam defences; 10a added the Vitest unit suite and cleared the
-  dependency audit; 10b has CI and the security headers so far. **Remaining in 10b:**
-  Playwright, branch protection, login rate limiting, and a browser pass (Lighthouse, axe,
-  and a CSP-violation check). See `docs/roadmap.md`.
+  dependency audit; 10b has CI, the security headers, login rate limiting, and a green
+  Playwright suite — 13 tests covering the auth boundary, every admin screen signed in,
+  create → publish → appears publicly, and a CSP check in a real browser. **Remaining in
+  10b:** branch protection and a browser pass (Lighthouse and axe). See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -75,6 +76,15 @@ An edit made through `/admin` appears immediately, because every mutation revali
 paths built from it — see `src/server/revalidate.ts`. A row edited **directly** in the
 database bypasses that and does not appear until the next deploy.
 
+**"Immediately" means the next request but one.** Measured in Phase 10b against a
+production build: after unpublishing a project, the first request to `/projects/[slug]`
+still returns **200 with the stale page**, and every request after it returns 404. The same
+holds via a raw fetch, so it is not the browser's cache — it is Next serving an invalidated
+page once more while regenerating behind it. Exactly one visitor can see a project after it
+is taken down. That is accepted, and `tests/e2e/publish.spec.ts` polls rather than
+asserting on the first response, because asserting otherwise would encode a promise the
+framework does not make.
+
 Full reasoning: `docs/architecture.md`. Decisions: `docs/decisions/`.
 
 ---
@@ -95,6 +105,9 @@ All verified working. Run from the repository root.
 | `npm run format:check` | Prettier check (CI-safe)                                           |
 | `npm test`             | Vitest unit suite, once. Needs no database and no network.         |
 | `npm run test:watch`   | The same suite, in watch mode                                      |
+| `npm run e2e`          | Playwright. **Needs `E2E_DATABASE_URL`** — see below.              |
+| `npm run e2e:ui`       | The same suite in Playwright's UI mode, for writing tests          |
+| `npm run e2e:report`   | Open the HTML report from the last run                             |
 
 **Why `typecheck` runs `next typegen` first:** Next 16 generates global route types
 (`LayoutProps<"/">`, `PageProps<"/path">`) into `.next/types/`, which is gitignored. On a
@@ -119,7 +132,34 @@ types have never been emitted. `next typegen` produces them without a full build
 `npm run build` runs `prisma generate` first, so a fresh clone builds without a
 database being reachable.
 
-_(future)_ `npm run e2e` (Playwright) — Phase 10b.
+### End-to-end tests and the database they use
+
+**`npm run e2e` will refuse to start until `E2E_DATABASE_URL` is set, and refuse again if
+it resolves to the same database as `DATABASE_URL`.** That is not friction to work around
+— it is the point.
+
+The suite signs in and creates, publishes, and deletes real rows, because a
+"create → publish → appears publicly" test that does not write is not testing anything.
+Meanwhile local development and the Vercel project still share **one** Neon database
+(Phase 11 gives production its own). `/projects` reads `searchParams`, so it is dynamic
+rather than prerendered — a test project published against that database would appear on
+the **live site**, and stay there if a run crashed before its cleanup.
+
+So the suite reads `E2E_DATABASE_URL`, a name production does not set, and compares it
+against `DATABASE_URL` with `-pooler` normalised away so Neon's pooled and direct strings
+for one database are recognised as the same place. Use a Neon **branch** — a copy-on-write
+clone, made in about ten seconds from the Neon console. Full reasoning and both refusal
+messages: `tests/e2e/support/database.ts`.
+
+The database is migrated and seeded by `tests/e2e/prepare-database.ts`, which runs as the
+first step of `npm run e2e:server` — **before** `next build`, not from Playwright's
+`globalSetup`. Playwright starts `webServer` _before_ `globalSetup`, so preparing the
+database there would seed it after the build had already prerendered public pages from an
+empty one. Do not move it.
+
+`AUTH_URL` must be set for a production build, and the config does it. Without it every
+`/api/auth/*` request from `next start` answers 500 with `UntrustedHost` — and `next dev`
+is unaffected, so it looks like the tests broke rather than the configuration.
 
 ### Dependency overrides
 
@@ -186,7 +226,12 @@ tests/
   unit/                 Vitest. Node environment — no jsdom, no React Testing
                         Library, because async Server Components cannot be
                         rendered by Vitest at all. See docs/decisions/0009.
-  e2e/                  Playwright _(future — Phase 10b)_
+  e2e/                  Playwright. Signs in and drives the real admin — the
+                        only tests that render a page. Writes to a database,
+                        and refuses to run against the live one; the guard is
+                        in support/database.ts and is the first thing to read.
+                        prepare-database.ts runs before the build, not from
+                        globalSetup — see the note above.
 docs/
   architecture.md       Full architecture and rationale
   roadmap.md            Phases, with live status
@@ -242,6 +287,10 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
   collection goes in the import list at the top of `tests/unit/content.test.ts`.** Both files
   have a test that fails when you forget, so this is enforced rather than remembered — but
   the fix is to add the entry, never to loosen the enforcing test.
+- **Never point the e2e suite at `DATABASE_URL`, and never weaken the guard that stops
+  you.** It writes and publishes real rows, and that database is currently the live
+  site's. `docs/decisions/0011` explains both refusals; the fix for hitting one is a
+  throwaway database, never an exception.
 - **A test must be seen to fail before it is trusted.** Break the thing on purpose, watch the
   right test go red, then revert. A green test that has never failed is evidence of nothing;
   two of the invariants in `tests/unit/` were confirmed exactly this way.
