@@ -581,8 +581,26 @@ appeared, since a check cannot be required until GitHub has seen it once.
 
 ## Phase 11 — Production
 
-- [ ] Production environment variables and database
-- [ ] Migration flow in the build step
+- [x] **Migration flow in the build step** — `scripts/vercel-build.mjs`, wired in as a
+      `vercel-build` script, which Vercel prefers over `build`. Applies pending
+      migrations and then builds. `npm run build` is untouched, so a developer or CI
+      building something never migrates as a side effect.
+- [x] **Migrations gated on `VERCEL_ENV=production`.** Preview deployments run this
+      script too, and Vercel's default variable scope is "Production and Preview" — so
+      without the gate, one mis-scoped variable means opening a pull request migrates
+      production, ahead of review and ahead of the code needing it. Verified for
+      `production`, `preview`, and unset: only production migrates, and unset fails
+      safe. See `docs/decisions/0012`.
+- [ ] **Split the database per environment — CODE DONE, DASHBOARD PENDING.** Three Neon
+      branches: `production` (Vercel, Production scope only), `development`
+      (`.env.local`), `e2e` (already exists). Until the `development` branch exists and
+      `.env.local` points at it, `npm run db:seed` still reverts the live site to
+      whatever is in git and `npm run db:reset` still destroys it. **This is the item
+      that actually removes the risk; the code above only prepares for it.**
+- [ ] Re-scope the Vercel variables: `DATABASE_URL` and `DIRECT_URL` to **Production
+      only**, with Preview pointed at `development`. Not load-bearing — the
+      `VERCEL_ENV` gate covers the dangerous case — but it stops preview deployments
+      reading and writing live content.
 - [ ] Error monitoring, analytics
 - [ ] Custom domain and DNS — **low priority, genuinely last**
 

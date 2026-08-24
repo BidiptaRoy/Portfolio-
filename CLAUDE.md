@@ -22,13 +22,15 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 10 in progress. Phases 1–8 built the CMS; 9a put project
-  galleries, the profile portrait, and resume revisions on Vercel Blob; 9b added the contact
-  form, its inbox, and its spam defences; 10a added the Vitest unit suite and cleared the
-  dependency audit; 10b has CI, the security headers, login rate limiting, and a green
-  Playwright suite — 13 tests covering the auth boundary, every admin screen signed in,
-  create → publish → appears publicly, and a CSP check in a real browser. **Remaining in
-  10b:** branch protection and a browser pass (Lighthouse and axe). See `docs/roadmap.md`.
+- **Current phase:** Phase 11 started, **with Phase 10b deliberately left open.** Phases
+  1–8 built the CMS; 9a put project galleries, the profile portrait, and resume revisions
+  on Vercel Blob; 9b added the contact form, its inbox, and its spam defences; 10a added
+  the Vitest unit suite; 10b added CI, the security headers, login rate limiting, a green
+  13-test Playwright suite, and Lighthouse 99/100/100/100.
+  **Open in 10b:** 🔴 CI is red on the End-to-end job and its log has not been read, so
+  branch protection is blocked; the axe scan and the light-theme accessibility pass are
+  also outstanding. **In progress in 11:** the database split — the code is done, the Neon
+  and Vercel dashboard steps are not. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -55,8 +57,12 @@ requests get their own preview deployments.
 
 ## Architecture at a glance
 
-A **modular monolith** — one Next.js app, one deployment, one database. Not a separate
-frontend and backend; Server Components read data, Server Actions write it.
+A **modular monolith** — one Next.js app, one deployment. Not a separate frontend and
+backend; Server Components read data, Server Actions write it.
+
+One database _schema_, but since Phase 11 **three databases**, as Neon branches:
+`production` (Vercel only), `development` (`.env.local`), and `e2e` (the Playwright suite).
+See `docs/decisions/0012`.
 
 ```
 Public routes (Server Components, cached)
@@ -135,6 +141,19 @@ types have never been emitted. `next typegen` produces them without a full build
 
 `npm run build` runs `prisma generate` first, so a fresh clone builds without a
 database being reachable.
+
+**`npm run db:seed` and `npm run db:reset` point at the DEVELOPMENT database, and only
+because of Phase 11.** Before it there was one database and `.env.local` named the live
+site — so seeding reverted production to whatever was in git, and resetting destroyed it.
+Neither command changed; what they point at did. Check which branch `.env.local` names
+before running either. `docs/decisions/0012`.
+
+**`npm run vercel-build` is Vercel's build, not yours.** It applies pending migrations and
+then calls `npm run build`. Vercel prefers a `vercel-build` script when one exists, which
+keeps the migration step off the path a developer or CI takes. It applies migrations **only
+when `VERCEL_ENV=production`** — preview deployments skip them, so an unreviewed migration
+in a pull request cannot reach the production database even if a Vercel variable is
+mis-scoped. Read `scripts/vercel-build.mjs` before changing any of that.
 
 ### End-to-end tests and the database they use
 
