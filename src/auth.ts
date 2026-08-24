@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/auth.config";
 import { prisma } from "@/lib/db";
 import { credentialsSchema } from "@/lib/validation/auth";
+import { checkLoginRateLimit, clearLoginAttempts, recordFailedLogin } from "@/server/rate-limit";
 
 /**
  * A real argon2id hash of a value nobody knows, used to burn roughly the same
@@ -45,10 +46,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
        * Never return a different error for "no such user" versus "wrong
        * password" — that turns the login form into an account-existence
        * oracle.
+       *
+       * ⚠ THIS IS WHERE THE LOGIN RATE LIMIT IS ENFORCED, and it has to be
+       * here rather than in the `login` Server Action. Auth.js mounts its
+       * own handler, so `POST /api/auth/callback/credentials` reaches this
+       * function directly, without the action. A limit in the action alone
+       * is one an attacker walks around. See src/server/rate-limit.ts.
        */
       async authorize(raw) {
+        /*
+          Checked BEFORE the credentials are even parsed, let alone hashed.
+          argon2 is deliberately expensive — that is the point of it — so a
+          flood of guesses is also a CPU exhaustion attack, and the cheapest
+          moment to refuse is before any of that work happens.
+        */
+        const verdict = await checkLoginRateLimit();
+
+        if (!verdict.allowed) {
+          /*
+            Nothing is recorded on this path, on purpose. Counting a request
+            that was already refused would let an attacker hold the window
+            open indefinitely by continuing to hammer it, turning a
+            fifteen-minute pause into a lockout they control rather than the
+            clock. The person who sees the useful message here is the one
+            the `login` action answers; this returns the same opaque null as
+            every other failure.
+          */
+          return null;
+        }
+
         const parsed = credentialsSchema.safeParse(raw);
-        if (!parsed.success) return null;
+        if (!parsed.success) {
+          await recordFailedLogin(verdict.ipHash);
+          return null;
+        }
 
         const { email, password } = parsed.data;
 
@@ -59,11 +90,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user) {
           // Burn equivalent time, then fail. The result is discarded.
           await verify(DUMMY_HASH, password).catch(() => false);
+          await recordFailedLogin(verdict.ipHash);
           return null;
         }
 
         const valid = await verify(user.passwordHash, password).catch(() => false);
-        if (!valid) return null;
+        if (!valid) {
+          await recordFailedLogin(verdict.ipHash);
+          return null;
+        }
+
+        // Succeeded, so this address's earlier failures are forgotten —
+        // four typos then the right password must not leave someone one
+        // attempt from a lockout.
+        await clearLoginAttempts(verdict.ipHash);
 
         await prisma.adminUser.update({
           where: { id: user.id },

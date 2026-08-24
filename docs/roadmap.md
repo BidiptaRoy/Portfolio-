@@ -6,7 +6,7 @@ single operation.
 
 **Phase 10a complete. Current phase: 10b — Playwright, CI, and hardening.** The CMS is live,
 every content type is editable at `/admin`, media uploads to Vercel Blob, the contact form
-accepts, stores, and emails messages, and 151 unit tests now guard the checks that were
+accepts, stores, and emails messages, and 187 unit tests now guard the checks that were
 previously run once from scratch scripts. Outstanding from 9b: `RESEND_API_KEY` exists
 locally but **not yet in the Vercel project**, so production saves messages without
 notifying.
@@ -178,8 +178,10 @@ The timing result is the dummy-hash defence working. Without it the
 nonexistent-account path returns in a few milliseconds and the shared error
 message becomes meaningless.
 
-**Still missing: rate limiting.** Nothing currently stops thousands of guesses.
-That is Phase 10, and it is the largest remaining gap in the auth surface.
+**Rate limiting: closed in Phase 10b.** Ten failures per address per fifteen
+minutes, plus a global ceiling, enforced inside `authorize()` — which is the
+part worth reading, because the `login` Server Action is the wrong place for it
+and Auth.js's own endpoint is why. See `docs/decisions/0010`.
 
 ## Phase 8 — Admin CMS
 
@@ -399,7 +401,8 @@ which needs a running server and a real Chromium.
       CLI verified under it. See `docs/decisions/0009`, which also says when to
       remove the override.
 
-151 tests, no database, no network, no Blob token, under a second.
+151 tests at the close of 10a — 187 once the login rate limit brought its own. No
+database, no network, no Blob token, under a second.
 
 **Verified by mutation, not by going green.** Dropping the `PUBLISHED` filter
 from `getProjects` and adding an SVG signature to the accepted image types each
@@ -431,9 +434,17 @@ yet evidence of anything.
       directly, or reads a public page. This is the largest remaining test gap.
 - [ ] Edge rate limiting — in front of the database-backed limit in
       `src/server/rate-limit.ts`, not replacing it
-- [ ] **Login rate limiting** — nothing currently stops thousands of password
-      guesses. Flagged in Phase 7 as the largest gap in the auth surface and
-      still open.
+- [x] **Login rate limiting** — the gap Phase 7 flagged as the largest in the
+      auth surface. Ten failures per address per fifteen minutes plus a global
+      ceiling, enforced **inside `authorize()`**, because Auth.js accepts
+      credentials at its own route and a limit in the `login` Server Action is
+      one an attacker walks around. Verified by posting fifteen wrong passwords
+      straight to `/api/auth/callback/credentials`, bypassing the action: ten
+      recorded, five refused, a second address unaffected, and the stored
+      identifiers 64-character hashes rather than addresses. A refused attempt
+      is deliberately **not** recorded — otherwise an attacker holds the window
+      open forever and the lockout becomes theirs to control. See
+      `docs/decisions/0010`.
 - [ ] Lighthouse ≥ 95 and an axe audit — carried over from Phase 5; both need a
       real browser, which Phase 10b is where one arrives.
 - [ ] **Confirm no CSP violations in a browser console.** The policy was
@@ -485,6 +496,29 @@ appeared, since a check cannot be required until GitHub has seen it once.
 - [ ] `/r/[slug]` redirect
 - [ ] Referral links as data
 - [ ] Optional click tracking (hashed IP, no cookies)
+
+### Supplied by Bidipta, 2026-08-24 — for whoever picks this up
+
+- **Taskrabbit profile:** https://tr.co/bidipta-r
+- **Promo code:** `TSKGXDEV`
+
+Both are public-facing by nature — a referral link and a promo code exist to be
+shared — so they are recorded here rather than treated as secrets. They are
+content, though, not configuration: when Phase 12 starts they belong in the
+database behind the CMS like everything else, editable at `/admin` without a
+deploy. A promo code hard-coded into a component is a promo code that expires
+and needs a developer.
+
+⚠ **Terminology, which is non-negotiable and easy to get wrong here.**
+Taskrabbit is a _platform through which services are provided_, never an
+employer. Render as "via Taskrabbit". The `Experience` model already enforces
+this by keeping `platform` separate from `organization`, and
+`tests/unit/content.test.ts` fails if "Taskrabbit" ever appears in the
+`organization` field. The same care applies to any services page: it describes
+Bidipta's own independent work, with Taskrabbit as the channel.
+
+Still outstanding for this area, and still needing Bidipta rather than
+invention: the **Taskrabbit engagement dates** noted in Phase 3.
 
 ---
 

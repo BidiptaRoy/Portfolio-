@@ -174,9 +174,12 @@ src/
                         resume, content (experience/education/skills/profile).
     revalidate.ts       Which paths each kind of edit invalidates. Shared, so
                         two action files writing the same content cannot drift.
-    rate-limit.ts       Database-backed limit for the contact form. Counts
-                        rows, not memory — an in-memory counter is per-instance
-                        on serverless and therefore no limit at all.
+    rate-limit.ts       Database-backed limits for the two endpoints a stranger
+                        can reach: the contact form and sign-in. Counts rows,
+                        not memory — an in-memory counter is per-instance on
+                        serverless and therefore no limit at all. The login
+                        limit is enforced in `authorize()`, NOT in the login
+                        action; see docs/decisions/0010 before moving it.
   types/
     content.ts          Domain model. The shape the Prisma models will implement.
 tests/
@@ -293,6 +296,10 @@ its upload forms and says storage is not configured; nothing else changes.
   convention; a `middleware.ts` would silently never run.
 - **Never add a registration, invite, or first-user-becomes-admin path.**
   `scripts/create-admin.ts` is the only way an account is created, on purpose.
+- **Do not move the login rate limit into the `login` Server Action.** It lives in
+  `authorize()` because Auth.js accepts credentials at its own route
+  (`POST /api/auth/callback/credentials`), so a check in the action is one an attacker
+  skips. The action's copy exists only for the error message. `docs/decisions/0010`.
 
 ---
 

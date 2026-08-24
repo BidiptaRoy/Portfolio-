@@ -84,6 +84,40 @@ model AdminUser {
   updatedAt    DateTime  @updatedAt
 }
 
+/// One row per FAILED sign-in attempt, and the whole basis of the login rate
+/// limit. Phase 7 shipped without one and recorded the gap: nothing stopped
+/// thousands of password guesses.
+///
+/// Only failures are stored, and a successful sign-in DELETES the rows for
+/// that address — so someone who mistypes their password four times and then
+/// gets it right is not left one attempt away from being locked out.
+///
+/// Rows are pruned as they age out of the window, by the same code that
+/// writes them. No cron job and no scheduled function: failed logins are the
+/// only thing that inserts here, so the cheapest place to clean up is on the
+/// way in, and the table stays small enough that the indexes below are
+/// almost decorative.
+///
+/// There is no `email` column, on purpose. Storing which address was
+/// attempted would turn this table into a log of guessed usernames — a thing
+/// worth stealing — and the limit does not need it: with exactly one
+/// administrator, "how many failures from this address recently" is the only
+/// question being asked.
+model LoginAttempt {
+  id String @id @default(cuid())
+
+  /// SHA-256 of the client IP with a domain-separated secret, never the raw
+  /// address — the same treatment as ContactMessage.ipHash, for the same
+  /// reasons. Null when no address could be read from the request.
+  ipHash String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  /// Serves the limit lookup: recent failures from one address.
+  @@index([ipHash, createdAt])
+}
+
 // ---------------------------------------------------------------------------
 // Content
 //
