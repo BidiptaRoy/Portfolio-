@@ -9,9 +9,9 @@ every content type is editable at `/admin`, media uploads to Vercel Blob, the co
 accepts, stores, and emails messages, and 187 unit tests now guard the checks that were
 previously run once from scratch scripts. Login rate limiting landed, and Playwright is
 green — 13 end-to-end tests covering the auth boundary, every admin screen signed in,
-create → publish → appears publicly, and a CSP check in a real browser. Outstanding from 9b:
-`RESEND_API_KEY` exists locally but **not yet in the Vercel project**, so production saves
-messages without notifying.
+create → publish → appears publicly, and a CSP check in a real browser. **Phase 9 is now
+fully closed** — `RESEND_API_KEY` reached the Vercel project on 2026-08-23 and the
+deployment carrying it is live, so production notifies as well as stores.
 
 The e2e suite runs against a dedicated Neon branch named `e2e`, never the application's
 own database — see the warning below and `docs/decisions/0011`. Set `E2E_DATABASE_URL`
@@ -131,10 +131,30 @@ and the filter costs zero JavaScript.
 - [x] `next/image` wherever images render — project galleries, card
       thumbnails, and the hero portrait, added in Phase 9a. Verified against a
       real Blob-hosted file: `/_next/image` serves it re-encoded.
-- [ ] **Lighthouse ≥ 95 and an axe audit — NOT RUN.** Both need a real
-      browser, which is not available in this environment. Must be run
-      manually (Chrome DevTools → Lighthouse) before launch.
+- [x] **Lighthouse ≥ 95 — passed on the home page.** Run against production
+      2026-08-24, mobile, Edge DevTools: **Performance 99, Accessibility 100,
+      Best Practices 100, SEO 100.** FCP 0.9s, LCP 2.1s, TBT 10ms, **CLS 0**,
+      Speed Index 0.9s. Best Practices at 100 means the CSP's `'unsafe-inline'`
+      was not flagged.
+- [ ] **Lighthouse on the remaining pages** — `/about`, `/experience`,
+      `/projects`, a project detail page, `/resume`, `/contact`. Only the home
+      page has been measured.
+- [ ] **The axe audit itself — still NOT RUN.** Lighthouse's Accessibility
+      category runs a _subset_ of axe's rules, so 100 there is not the same
+      result. Needs the axe DevTools extension, in a normal (non-InPrivate)
+      window.
+- [ ] **Both, again with `prefers-color-scheme: light`.** The runs above were
+      made on a machine set to dark, so they measured the dark palette. Light
+      is a full token swap and therefore a different set of contrast
+      measurements. DevTools → Rendering → Emulate CSS media feature.
 - [ ] Full keyboard navigation pass — needs a human at a keyboard
+
+> **The first Lighthouse run after a deploy is worthless.** The first attempt
+> scored Performance 93 with a Speed Index of 7.4s and "Document request
+> latency — est. savings 4,680 ms". Nothing was wrong: it was a cold
+> serverless start. The warm re-run scored 99 with a Speed Index of 0.9s and no
+> latency finding at all. Always discard the first run, and take a median of
+> three.
 
 > **Milestone: live portfolio deployed.** Everything after this point is the CMS. If
 > momentum ever stops here, the result is still a finished, deployed portfolio.
@@ -305,10 +325,14 @@ no code, and only the media half needs a real file round-trip verified.
       This needed checking separately because with no verified domain,
       Resend delivers only to the address the account was registered with
       and drops anything else after a successful-looking API call.
-- [ ] Add `RESEND_API_KEY` to the **Vercel** project. Until it is there,
-      production stores messages and emails nothing — the dashboard and inbox
-      both say so, but only if someone looks. **The last open item in Phase 9,
-      and it is a dashboard paste, not a code change.**
+- [x] `RESEND_API_KEY` added to the **Vercel** project, Production and Preview,
+      confirmed in the dashboard beside the other five variables. **Phase 9 is
+      closed.** One caveat kept deliberately: the variable is present and a
+      deployment carrying it is live, but no message has been submitted through
+      the _production_ form since — so this is verified to the same standard as
+      the other five env vars, not to the standard of the local delivery test
+      above. Sending one real submission through the live form would close that
+      last inch.
 
 Verified against the running application, driving the real Server Action over
 HTTP the way a browser with JavaScript disabled does:
@@ -484,8 +508,9 @@ yet evidence of anything.
       is deliberately **not** recorded — otherwise an attacker holds the window
       open forever and the lockout becomes theirs to control. See
       `docs/decisions/0010`.
-- [ ] Lighthouse ≥ 95 and an axe audit — carried over from Phase 5; both need a
-      real browser, which Phase 10b is where one arrives.
+- [x] **Lighthouse ≥ 95 — met.** 99/100/100/100 against production. Details and
+      the cold-start caveat are recorded under Phase 5, with the remaining
+      pages, the axe extension scan, and the light-theme pass still open there.
 - [ ] **Confirm no CSP violations in a browser console.** The policy was
       verified by auditing the built markup — every off-origin reference, every
       inline script, every style attribute — but not by loading a page in a real

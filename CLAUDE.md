@@ -41,8 +41,12 @@ requests get their own preview deployments.
 >
 > **Every environment variable this app reads must exist in the Vercel project**, not only in
 > `.env.local`: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`,
-> `NEXT_PUBLIC_SITE_URL`. Paste values WITHOUT the surrounding quotes — those are dotenv
-> syntax, and the dashboard stores the literal string.
+> `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`. All six are present as of 2026-08-24. Paste
+> values WITHOUT the surrounding quotes — those are dotenv syntax, and the dashboard
+> stores the literal string.
+>
+> `E2E_DATABASE_URL` and `E2E_DIRECT_URL` are the exception and must **never** be added
+> there: they are local-only, and the e2e suite is not something a deployment runs.
 >
 > **At every phase boundary, check that the deployment actually succeeded** and that a route
 > added in that phase responds in production. That check is what three phases went without.
