@@ -4,10 +4,12 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-**Phase 9 complete. Current phase: 10 — Testing and hardening.** The CMS is live, every
-content type is editable at `/admin`, media uploads to Vercel Blob, and the contact form
-accepts, stores, and emails messages. Outstanding from 9b: `RESEND_API_KEY` exists locally
-but **not yet in the Vercel project**, so production saves messages without notifying.
+**Phase 10a complete. Current phase: 10b — Playwright, CI, and hardening.** The CMS is live,
+every content type is editable at `/admin`, media uploads to Vercel Blob, the contact form
+accepts, stores, and emails messages, and 151 unit tests now guard the checks that were
+previously run once from scratch scripts. Outstanding from 9b: `RESEND_API_KEY` exists
+locally but **not yet in the Vercel project**, so production saves messages without
+notifying.
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -282,13 +284,15 @@ no code, and only the media half needs a real file round-trip verified.
 - [x] `/admin/messages` inbox — read/unread, delete, reply-by-mailto
 - [x] `RESEND_API_KEY` set locally; a real notification was accepted by
       Resend and `notifiedAt` stamped through the live form.
+- [x] **Delivery confirmed, not just acceptance.** Both test notifications
+      landed in the registered inbox (confirmed by Bidipta, 2026-08-24).
+      This needed checking separately because with no verified domain,
+      Resend delivers only to the address the account was registered with
+      and drops anything else after a successful-looking API call.
 - [ ] Add `RESEND_API_KEY` to the **Vercel** project. Until it is there,
       production stores messages and emails nothing — the dashboard and inbox
-      both say so, but only if someone looks.
-- [ ] Verify a notification actually **lands in the inbox**, not just that
-      Resend accepted it. With no verified domain, Resend delivers only to
-      the address the account was registered with; anything else is dropped
-      after a successful-looking API call.
+      both say so, but only if someone looks. **The last open item in Phase 9,
+      and it is a dashboard paste, not a code change.**
 
 Verified against the running application, driving the real Server Action over
 HTTP the way a browser with JavaScript disabled does:
@@ -345,28 +349,80 @@ authentication endpoints themselves and correctly are not guarded.
 
 **Not verified:** the admin screens rendered while signed in — every check
 above went through the actions and queries directly, or through a public page.
-The checks live in scratch scripts rather than the repository; port them into
-the Vitest suite in Phase 10.
+That gap is still open; it is Playwright's job in Phase 10b.
+
+The checks themselves no longer live only in scratch scripts: Phase 10a ported
+the storage and contact ones into `tests/unit/`, where they run on every commit.
+The two that could not be ported are the ones that need a real Blob store and a
+real mail provider — the round trip in the table above, and the notification
+that reached the inbox.
 
 ## Phase 10 — Testing and hardening
 
-- [ ] Vitest units (validation, query façade)
-- [ ] **Port the Phase 9a storage checks into Vitest** — magic-byte rejection
-      (including SVG), size limits, and header dimension parsing for PNG,
-      JPEG and WebP. They were run once from a scratch script and are
-      currently protected by nothing.
-- [ ] **Content validation test** — import every collection unconditionally and
-      assert it parses. Content schemas currently run only at module import, so
-      a collection no page reaches is never validated. Verified by planting a
-      duplicate slug in `education.ts`: the build passed. See
-      `src/lib/validation/content.ts`.
-- [ ] **Port the Phase 9b contact checks into Vitest** — rate limit windows,
-      honeypot, timing trap, and the length caps. They were driven once
-      against a running server from a scratch script.
+Split in two: the unit suite and the audit first, then the browser-driven half,
+which needs a running server and a real Chromium.
+
+### Phase 10a — Unit suite and dependency audit
+
+- [x] Vitest, node environment. **No jsdom and no React Testing Library** — the
+      Next.js guide recommends both, and neither earns its keep here: Vitest
+      cannot render an async Server Component, which is nearly every page in
+      this app. See `docs/decisions/0009`.
+- [x] `server-only` aliased to the package's own empty build, so modules under
+      `src/server/` are testable without turning the `react-server` condition
+      on globally.
+- [x] Validation units — `normalizeYearMonth` across every format a person
+      actually types, the contact form's length caps, the current/endDate rule,
+      and the resume filename regex.
+- [x] **Query façade: a sweep asserting no public read can reach the database
+      without `status: "PUBLISHED"`**, plus a companion test that enumerates the
+      façade's exports and fails if one is missing from the sweep. `admin.ts`
+      excluded on purpose — its reads include drafts.
+- [x] **Phase 9a storage checks ported** — magic-byte rejection (including an
+      SVG renamed `.png` and declared `image/png`), the empty and oversized
+      cases, pathname sanitisation, content type derived from bytes rather than
+      the client's header, and header dimension parsing for PNG, JPEG and all
+      three WebP sub-formats.
+- [x] **Content validation test** — every collection imported unconditionally,
+      so a collection no page reaches is still validated. A second test reads
+      `src/content/` off disk and fails if a file there is missing from that
+      import list. This closes the gap that let a planted duplicate slug in
+      `education.ts` build green.
+- [x] **Phase 9b contact checks ported** — rate-limit windows per sender and
+      global, the ordering of the two counts, the no-address case, and the
+      length caps. Driven through `evaluateContactRateLimit`, which exists so
+      the decision can be exercised without a request.
+- [x] **Dependency audit clean** — `npm audit` reported three high-severity
+      advisories, all `deepmerge-ts < 8` via `prisma` → `@prisma/config`.
+      Prisma 7.9.1 pins the vulnerable version and `npm audit fix --force`
+      "fixes" it by installing Prisma 6. Overridden to `^8` instead and the
+      CLI verified under it. See `docs/decisions/0009`, which also says when to
+      remove the override.
+
+151 tests, no database, no network, no Blob token, under a second.
+
+**Verified by mutation, not by going green.** Dropping the `PUBLISHED` filter
+from `getProjects` and adding an SVG signature to the accepted image types each
+failed exactly one test — the right one — and nothing else. Repeat that check
+when adding an invariant here; a test that has never been seen to fail is not
+yet evidence of anything.
+
+### Phase 10b — Browser, CI, and hardening
+
 - [ ] Playwright e2e: login, and create → publish → appears publicly
-- [ ] GitHub Actions CI; branch protection on `main`
-- [ ] Rate limiting, security headers, CSP
-- [ ] Dependency audit
+- [ ] **The admin screens rendered while signed in** — still covered by nothing
+      but manual use. Every automated check to date drives actions and queries
+      directly, or reads a public page. This is the largest remaining test gap.
+- [ ] GitHub Actions CI (typecheck, lint, format:check, test, build); branch
+      protection on `main`
+- [ ] Security headers and CSP
+- [ ] Edge rate limiting — in front of the database-backed limit in
+      `src/server/rate-limit.ts`, not replacing it
+- [ ] **Login rate limiting** — nothing currently stops thousands of password
+      guesses. Flagged in Phase 7 as the largest gap in the auth surface and
+      still open.
+- [ ] Lighthouse ≥ 95 and an axe audit — carried over from Phase 5; both need a
+      real browser, which Phase 10b is where one arrives.
 
 ## Phase 11 — Production
 

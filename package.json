@@ -13,11 +13,16 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "admin:create": "tsx scripts/create-admin.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.1.0",
@@ -47,6 +52,7 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

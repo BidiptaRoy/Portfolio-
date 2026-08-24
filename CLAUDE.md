@@ -22,11 +22,13 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 9 complete — **Phase 10 (testing and hardening) is next.**
-  Phases 1–8 built the CMS; 9a put project galleries, the profile portrait, and resume
-  revisions on Vercel Blob; 9b added the contact form, its inbox, and its spam defences.
-  Outstanding: `RESEND_API_KEY` is set locally but not on Vercel, so production stores
-  messages without emailing them. See `docs/roadmap.md`.
+- **Current phase:** Phase 10a complete — **10b (Playwright, CI, security headers and CSP)
+  is next.** Phases 1–8 built the CMS; 9a put project galleries, the profile portrait, and
+  resume revisions on Vercel Blob; 9b added the contact form, its inbox, and its spam
+  defences; 10a added the Vitest unit suite and cleared the dependency audit.
+  Outstanding: `RESEND_API_KEY` is set locally and verified end to end — a real notification
+  reached the inbox — but it is **not in the Vercel project**, so production stores messages
+  without emailing them. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -92,6 +94,8 @@ All verified working. Run from the repository root.
 | `npm run typecheck`    | `next typegen && tsc --noEmit` — see the note below                |
 | `npm run format`       | Prettier write                                                     |
 | `npm run format:check` | Prettier check (CI-safe)                                           |
+| `npm test`             | Vitest unit suite, once. Needs no database and no network.         |
+| `npm run test:watch`   | The same suite, in watch mode                                      |
 
 **Why `typecheck` runs `next typegen` first:** Next 16 generates global route types
 (`LayoutProps<"/">`, `PageProps<"/path">`) into `.next/types/`, which is gitignored. On a
@@ -99,7 +103,7 @@ fresh clone, bare `tsc --noEmit` fails with `Cannot find name 'LayoutProps'` bec
 types have never been emitted. `next typegen` produces them without a full build. Do not
 "fix" that error by hand-writing the prop types — run typegen.
 
-**Before any commit:** `npm run typecheck && npm run lint && npm run build`.
+**Before any commit:** `npm run typecheck && npm run lint && npm test && npm run build`.
 
 ### Database
 
@@ -116,7 +120,16 @@ types have never been emitted. `next typegen` produces them without a full build
 `npm run build` runs `prisma generate` first, so a fresh clone builds without a
 database being reachable.
 
-_(future)_ `npm test` (Vitest), `npm run e2e` (Playwright).
+_(future)_ `npm run e2e` (Playwright) — Phase 10b.
+
+### Dependency overrides
+
+`package.json` carries one `overrides` entry, forcing `deepmerge-ts` to `^8`. It exists
+because Prisma 7.9.1 pins a version with a high-severity advisory and `npm audit fix --force`
+"fixes" it by downgrading to Prisma 6. **Remove it when Prisma bumps its own pin** — check
+with `npm view @prisma/config dependencies.deepmerge-ts`, and if it is 8 or higher, delete
+the block and re-run `prisma validate`, `prisma generate` and `prisma migrate status`. Full
+reasoning in `docs/decisions/0009`.
 
 ---
 
@@ -162,6 +175,11 @@ src/
                         on serverless and therefore no limit at all.
   types/
     content.ts          Domain model. The shape the Prisma models will implement.
+tests/
+  unit/                 Vitest. Node environment — no jsdom, no React Testing
+                        Library, because async Server Components cannot be
+                        rendered by Vitest at all. See docs/decisions/0009.
+  e2e/                  Playwright _(future — Phase 10b)_
 docs/
   architecture.md       Full architecture and rationale
   roadmap.md            Phases, with live status
@@ -213,6 +231,13 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
   image on a public page.
 - **Alt text is required on every uploaded image** — a column, not an optional field.
 - **Validate on the server regardless of client validation.** Client validation is UX.
+- **A new public query goes in the sweep in `tests/unit/queries.test.ts`, and a new content
+  collection goes in the import list at the top of `tests/unit/content.test.ts`.** Both files
+  have a test that fails when you forget, so this is enforced rather than remembered — but
+  the fix is to add the entry, never to loosen the enforcing test.
+- **A test must be seen to fail before it is trusted.** Break the thing on purpose, watch the
+  right test go red, then revert. A green test that has never failed is evidence of nothing;
+  two of the invariants in `tests/unit/` were confirmed exactly this way.
 - **No `dangerouslySetInnerHTML`** except for vetted JSON-LD. Markdown must be sanitized.
 - **Design tokens are CSS custom properties** in `globals.css`. Never write a hex value in a
   component — use `bg-page`, `text-ink`, `text-ink-muted`, `border-line`, `bg-accent`.
