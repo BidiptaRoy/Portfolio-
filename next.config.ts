@@ -1,6 +1,25 @@
 import type { NextConfig } from "next";
 
+// A relative path, not the `@/` alias: this file is evaluated outside the
+// app's module graph, where that alias does not exist.
+import { securityHeaders } from "./src/lib/security-headers";
+
 const nextConfig: NextConfig = {
+  /**
+   * Security headers on every response, including static assets.
+   *
+   * Set here rather than in `src/proxy.ts` because the proxy is scoped to
+   * `/admin` — deliberately, so that an auth check never runs in front of
+   * the public pages. Headers belong on everything, so they go in the
+   * config, which Vercel applies at the edge without invoking a function.
+   *
+   * The policy itself, and why it is not nonce-based, is in
+   * `src/lib/security-headers.ts`.
+   */
+  async headers() {
+    return [{ source: "/(.*)", headers: securityHeaders() }];
+  },
+
   images: {
     remotePatterns: [
       {

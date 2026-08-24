@@ -22,13 +22,12 @@ A second audience exists alongside recruiters: prospective clients for independe
 professional services offered via Taskrabbit. That area is planned but not built.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 10a complete — **10b (Playwright, CI, security headers and CSP)
-  is next.** Phases 1–8 built the CMS; 9a put project galleries, the profile portrait, and
-  resume revisions on Vercel Blob; 9b added the contact form, its inbox, and its spam
-  defences; 10a added the Vitest unit suite and cleared the dependency audit.
-  Outstanding: `RESEND_API_KEY` is set locally and verified end to end — a real notification
-  reached the inbox — but it is **not in the Vercel project**, so production stores messages
-  without emailing them. See `docs/roadmap.md`.
+- **Current phase:** Phase 10 in progress. Phases 1–8 built the CMS; 9a put project
+  galleries, the profile portrait, and resume revisions on Vercel Blob; 9b added the contact
+  form, its inbox, and its spam defences; 10a added the Vitest unit suite and cleared the
+  dependency audit; 10b has CI and the security headers so far. **Remaining in 10b:**
+  Playwright, branch protection, login rate limiting, and a browser pass (Lighthouse, axe,
+  and a CSP-violation check). See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -151,6 +150,11 @@ src/
     storage.ts          ★ Storage façade. The ONLY module that imports
                         @vercel/blob. Validates uploads by magic bytes and
                         reads image dimensions from file headers.
+    security-headers.ts ★ CSP and security headers, applied to every response
+                        from next.config.ts. Imported by the Next config, so it
+                        has no `server-only` guard and uses no `@/` alias.
+                        Two directives deviate from the textbook policy on
+                        purpose — read the comments before tightening either.
     email.ts            ★ Email façade. The ONLY module that imports resend.
                         Never throws — sending is a notification, not a
                         precondition for anything succeeding.
@@ -241,6 +245,10 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
 - **No `dangerouslySetInnerHTML`** except for vetted JSON-LD. Markdown must be sanitized.
 - **Design tokens are CSS custom properties** in `globals.css`. Never write a hex value in a
   component — use `bg-page`, `text-ink`, `text-ink-muted`, `border-line`, `bg-accent`.
+- **Never loosen the CSP to make something work.** Every token in
+  `src/lib/security-headers.ts` is either needed by something in the built markup or
+  deliberately absent, and the tests say which. If a new dependency needs an off-origin
+  script or `connect-src` entry, that is a decision about the dependency, not a header edit.
 - **Never add a color without measuring its contrast** against the theme it sits on. The
   palette is built for outdoor legibility; an unmeasured color silently breaks that. There
   are exactly two text colors (`ink`, `ink-muted`) and adding a third lighter one is how

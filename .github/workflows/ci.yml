@@ -1,0 +1,113 @@
+# Continuous integration.
+#
+# This runs the same gate CLAUDE.md asks for before a commit, plus one thing a
+# developer machine cannot check: that a FRESH CLONE with an EMPTY DATABASE can
+# migrate, seed, and build. Phases 6, 7 and 8 all built cleanly on the dev
+# machine, pushed successfully, and failed on Vercel — the deployment had no
+# DATABASE_URL, and public pages prerender from the database. Vercel kept
+# serving the last good build, so the site looked healthy while running three
+# phases behind. This job is the check that would have caught it.
+#
+# It is deliberately NOT a deployment gate — Vercel deploys from `main` on its
+# own. This is the signal that tells you whether that deployment is going to
+# work, and what branch protection on `main` should require.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A second push to the same branch makes the first run's answer irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+
+    services:
+      # A real Postgres, empty at the start of every run. The app's runtime
+      # client uses @prisma/adapter-pg, so plain Postgres is what it talks to
+      # anyway — Neon's difference is the pooler in front, not the engine.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: portfolio_ci
+        ports:
+          - 5432:5432
+        # Without this the first migration races the database's startup and
+        # fails with a connection error that looks like a config problem.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Locally these are two different strings — pooled for the app, direct
+      # for the CLI (see prisma.config.ts). There is no pooler here, so both
+      # point at the same place. Set anyway, because a missing DIRECT_URL is
+      # exactly the kind of gap this job exists to catch.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/portfolio_ci
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/portfolio_ci
+      # Not a secret and not reused anywhere: no session issued in CI is ever
+      # honoured by a real deployment. The build needs the variable to exist.
+      AUTH_SECRET: ci-only-placeholder-not-a-real-secret
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      # BLOB_READ_WRITE_TOKEN is deliberately absent. Storage is optional by
+      # design, so the build must succeed without it — and it does, with the
+      # admin's upload forms replaced by a "not configured" message.
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # BEFORE typecheck, not as part of the build. The Prisma client is
+      # generated into src/generated/ and gitignored, so on a fresh clone
+      # `tsc` fails with "Cannot find module '@/generated/prisma/client'"
+      # before it type-checks a single line of our own code. Needs no
+      # database — see the note in prisma.config.ts.
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      # Cheapest first, so a formatting slip does not wait on a build.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Unit tests
+        run: npm test
+
+      # From here on the database matters. `migrate deploy` applies the
+      # committed migrations to an empty database, which is the one thing no
+      # developer machine ever does — locally they were applied one at a time,
+      # months apart, to a database that already had the previous state.
+      - name: Apply migrations to an empty database
+        run: npm run db:deploy
+
+      - name: Seed
+        run: npm run db:seed
+
+      # Last, because it is the slowest and because it reads the database it
+      # has just seeded. A build that passes here is a build that can prerender
+      # against real rows.
+      - name: Build
+        run: npm run build

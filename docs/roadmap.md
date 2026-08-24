@@ -409,13 +409,26 @@ yet evidence of anything.
 
 ### Phase 10b — Browser, CI, and hardening
 
+- [x] **GitHub Actions CI** — `.github/workflows/ci.yml`. Runs the commit gate
+      (generate → typecheck → lint → format:check → test) and then does the one
+      thing no developer machine does: applies the committed migrations to an
+      **empty** Postgres, seeds it, and builds against it. Locally those
+      migrations were applied one at a time, months apart, to a database that
+      already held the previous state. This is the check that would have caught
+      the three-phase Vercel failure.
+- [x] **Security headers and CSP** — `src/lib/security-headers.ts`, applied to
+      every response from `next.config.ts` (not the proxy, which is scoped to
+      `/admin` on purpose). CSP, HSTS, `nosniff`, `Referrer-Policy`,
+      `X-Frame-Options`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`.
+      Verified against real responses from `npm start`, and the policy is
+      unit-tested.
+- [ ] **Branch protection on `main`** — needs the GitHub dashboard; there is no
+      `gh` CLI on this machine. Require the `Verify` check above, and require a
+      PR. See the note at the end of this phase.
 - [ ] Playwright e2e: login, and create → publish → appears publicly
 - [ ] **The admin screens rendered while signed in** — still covered by nothing
       but manual use. Every automated check to date drives actions and queries
       directly, or reads a public page. This is the largest remaining test gap.
-- [ ] GitHub Actions CI (typecheck, lint, format:check, test, build); branch
-      protection on `main`
-- [ ] Security headers and CSP
 - [ ] Edge rate limiting — in front of the database-backed limit in
       `src/server/rate-limit.ts`, not replacing it
 - [ ] **Login rate limiting** — nothing currently stops thousands of password
@@ -423,6 +436,40 @@ yet evidence of anything.
       still open.
 - [ ] Lighthouse ≥ 95 and an axe audit — carried over from Phase 5; both need a
       real browser, which Phase 10b is where one arrives.
+- [ ] **Confirm no CSP violations in a browser console.** The policy was
+      verified by auditing the built markup — every off-origin reference, every
+      inline script, every style attribute — but not by loading a page in a real
+      browser. Do this on the preview deployment before it reaches production.
+
+#### What the CSP audit found, and why it is not the textbook policy
+
+Two directives deviate from the usual recommendation, both deliberately, and
+both are now regression-tested because both look like mistakes:
+
+- **`object-src` is not `'none'`.** `/resume` embeds the PDF in an
+  `<object data={fileUrl}>` — chosen over an iframe because it degrades to its
+  children where a browser cannot render a PDF inline. `'none'` would blank the
+  preview. `frame-src` matches it, because browsers disagree about which
+  directive governs a PDF object.
+- **`style-src` keeps `'unsafe-inline'` despite there being no inline
+  stylesheet.** Zero `<style>` tags exist in the built markup, so the token
+  looks like dead permissiveness. It is not: `next/image` emits a
+  `style="position:absolute;…"` **attribute** on the fill image used for the
+  home page's hero portrait, and CSP governs style attributes here too.
+
+`script-src` keeps `'unsafe-inline'` because a nonce would force dynamic
+rendering on every page, undoing the prerendering this site is built around.
+The home page carries 6 inline scripts (Next's hydration payload plus the
+JSON-LD block) and 11 external ones, all same-origin. No off-origin script host
+is permitted, so an injected `<script src>` is still refused. The upgrade path
+that keeps prerendering is Next's experimental `experimental.sri`; it is left
+off until it leaves experimental. Full reasoning in `src/lib/security-headers.ts`.
+
+#### Branch protection — a dashboard step
+
+GitHub → Settings → Branches → Add rule for `main`: require a pull request, and
+require the **Verify** status check. Worth doing only after the first CI run has
+appeared, since a check cannot be required until GitHub has seen it once.
 
 ## Phase 11 — Production
 
