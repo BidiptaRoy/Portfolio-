@@ -4,6 +4,12 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
+> 🔴 **10b is NOT complete, and was left open deliberately.** CI is red on the
+> End-to-end job and its log has not been read; branch protection is blocked behind it.
+> The axe scan, the light-theme accessibility pass, and Lighthouse on the six pages other
+> than home are also outstanding. Work moved on to Phase 11 with these known open — they
+> are listed under 10b below, not lost.
+
 **Phase 10a complete. Current phase: 10b — Playwright, CI, and hardening.** The CMS is live,
 every content type is editable at `/admin`, media uploads to Vercel Blob, the contact form
 accepts, stores, and emails messages, and 187 unit tests now guard the checks that were
@@ -463,9 +469,20 @@ yet evidence of anything.
       `X-Frame-Options`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`.
       Verified against real responses from `npm start`, and the policy is
       unit-tested.
+- [ ] 🔴 **CI is currently RED and the cause is unknown.** Run #2 (commit
+      `9916332`, 2026-08-24) failed after 2m31s. Run #1 was green, so the
+      failure arrived with the Playwright commit — most likely the new
+      **End-to-end** job, which had never executed anywhere before that push.
+      **The log has not been read.** There is no `gh` CLI on this machine, so
+      diagnosing it needs someone to open the run in a browser. Deliberately
+      deferred rather than guessed at; likely candidates are the 5-minute
+      `webServer` timeout against a cold CI build, or the Chromium/Postgres
+      setup in the job.
 - [ ] **Branch protection on `main`** — needs the GitHub dashboard; there is no
-      `gh` CLI on this machine. Require the `Verify` check above, and require a
-      PR. See the note at the end of this phase.
+      `gh` CLI on this machine. Require a PR, and require **both** the `Verify`
+      and `End-to-end` checks. **Blocked:** GitHub cannot offer a check as
+      required until it has seen it pass at least once, and `End-to-end` has
+      never passed. Fix CI first.
 - [x] **Playwright installed and configured** — Chromium only, against a
       production build (`npm run e2e`). Four specs written: the auth boundary,
       every admin screen signed in, create → publish → appears publicly, and a
