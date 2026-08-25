@@ -1,3 +1,5 @@
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 
@@ -76,6 +78,23 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Analytics runs ONLY on Vercel, and the check is not defensive clutter.
+ *
+ * Both packages load their script from a same-origin `/_vercel/…` path that
+ * only Vercel's edge proxies — which is exactly why they need no CSP change
+ * (see docs/decisions/0014). Off Vercel that path does not exist:
+ *
+ *   - in `next dev`, the packages fall back to an OFF-ORIGIN debug script at
+ *     va.vercel-scripts.com, which this site's CSP correctly refuses. That
+ *     would put a permanent, meaningless violation in the console of the one
+ *     environment where a real violation most needs to stand out.
+ *   - under `npm start` and in the e2e suite, the script simply 404s.
+ *
+ * Neither collects anything useful, so neither is worth rendering.
+ */
+const analyticsEnabled = process.env.VERCEL === "1";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${fraunces.variable} h-full`}>
@@ -86,6 +105,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter />
+
+        {analyticsEnabled ? (
+          <>
+            {/* Page views. Cookieless and no cross-site identifier, which is
+                why this needs no consent banner — see docs/decisions/0014. */}
+            <Analytics />
+            {/* Core Web Vitals from real visitors, rather than from one
+                Lighthouse run on one laptop on one connection. */}
+            <SpeedInsights />
+          </>
+        ) : null}
       </body>
     </html>
   );

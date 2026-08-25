@@ -337,6 +337,9 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
   `src/lib/security-headers.ts` is either needed by something in the built markup or
   deliberately absent, and the tests say which. If a new dependency needs an off-origin
   script or `connect-src` entry, that is a decision about the dependency, not a header edit.
+  Analytics was added in Phase 11 without touching it — see `docs/decisions/0014` for how
+  that was verified, and for the rule that if Vercel ever moves the script off-origin, the
+  dependency goes rather than the policy bending.
 - **Never add a color without measuring its contrast** against the theme it sits on. The
   palette is built for outdoor legibility; an unmeasured color silently breaks that. There
   are exactly two text colors (`ink`, `ink-muted`) and adding a third lighter one is how

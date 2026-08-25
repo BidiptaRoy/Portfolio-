@@ -605,7 +605,19 @@ appeared, since a check cannot be required until GitHub has seen it once.
       only**, with Preview pointed at `development`. Not load-bearing — the
       `VERCEL_ENV` gate covers the dangerous case — but it stops preview deployments
       reading and writing live content.
-- [ ] Error monitoring, analytics
+- [x] **Analytics — Vercel Analytics and Speed Insights**, rendered only when
+      `VERCEL === "1"`. **No CSP change**, which was the point: in production both
+      load from same-origin `/_vercel/…` paths that Vercel proxies. The off-origin
+      debug host appears in the bundle but sits behind `isDevelopment()`, which
+      compiles to a permanently false comparison once Next inlines `NODE_ENV` —
+      verified by reading the emitted chunk. Cookieless, so no consent banner.
+      `docs/decisions/0014`.
+- [ ] **Error monitoring — deliberately deferred, and the gap is real.** Analytics
+      answers "is anyone visiting and is it fast", not "did it break". A Server
+      Action throwing for a visitor still produces nothing but a function log
+      nobody reads. Sentry was rejected for now on bundle size, a `connect-src`
+      entry, and third-party session data — see 0014 for the reasoning and for
+      what would change it.
 - [ ] Custom domain and DNS — **low priority, genuinely last**
 
 ## Phase 12 — Services and referral
