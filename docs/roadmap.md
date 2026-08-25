@@ -9,12 +9,12 @@ single operation.
 > branch protection sits behind it. Work moved on with it known-open rather than pretending
 > otherwise. Everything else in 10b has since closed.
 
-**Phases 1–12a built. Phase 11 is one item from done; 10b has one blocker.** The CMS is
-live, every content type is editable at `/admin`, media uploads to Vercel Blob, the contact
-form stores and emails, and `/services` carries the client-facing area with its referral
-link as data. **194 unit tests and 23 end-to-end tests** — the latter covering the auth
-boundary, every admin screen signed in, create → publish → appears publicly, a CSP check in
-a real browser, and an axe audit in both colour schemes.
+**Phases 1–11 and 12a are complete. 10b has one blocker: the CI log.** The site is live at
+its own domain, every content type is editable at `/admin`, media uploads to Vercel Blob,
+the contact form stores and emails, and `/services` carries the client-facing area with its
+referral link as data. **194 unit tests and 23 end-to-end tests** — the latter covering the
+auth boundary, every admin screen signed in, create → publish → appears publicly, a CSP
+check in a real browser, and an axe audit in both colour schemes.
 
 **Databases are now split per environment** (`docs/decisions/0012`): `production` on Vercel
 only, `development` in `.env.local`, `e2e` for the Playwright suite. Migrations are applied
@@ -647,12 +647,15 @@ appeared, since a check cannot be required until GitHub has seen it once.
 > fall through to `VERCEL_PROJECT_PRODUCTION_URL`, which is exactly the fallback
 > `src/lib/site.ts` documents, so a preview build never emits canonicals pointing at itself.
 
-- [ ] **The old `*.vercel.app` URL still answers 200 instead of redirecting** — the one
-      failing check. Largely mitigated already: that origin now emits
-      `canonical → https://bidiptaroy.com`, so search engines will consolidate. A redirect
-      is still cleaner than relying on a hint. Vercel → Domains → **Edit** on the
-      `*.vercel.app` entry → redirect to `bidiptaroy.com`, then re-run
-      `npm run verify:deploy` with `--old` pointed at the old URL.
+- [x] **The old `*.vercel.app` URL now 308s to `bidiptaroy.com`.** Set in Vercel →
+      Domains → Edit → Redirect to Another Domain. **308 rather than 307 on purpose**: a
+      permanent redirect tells search engines to transfer the old URL's accumulated ranking
+      signals, where a temporary one would leave them treating the `.vercel.app` address as
+      the real home. The trade is that browsers cache a 308 hard, so it is not a setting to
+      flip casually — correct for a genuine permanent move, which this is.
+
+**Phase 11 complete. `npm run verify:deploy` reports 22/22.**
+
 - [ ] **Resend still sends from `onboarding@resend.dev`** and delivers only to the
       registered address. Owning the domain makes verification possible, which would let
       contact notifications come from an address at `bidiptaroy.com` and reach anyone.

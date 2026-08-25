@@ -29,15 +29,15 @@ reasoning, and the stated trigger that would promote it into the header, are in
 `tests/e2e/services.spec.ts`, and that ADR together.
 
 - **Live URL:** https://bidiptaroy.com
-- **Current phase:** Phase 12a done; Phase 11 all but its last item; **Phase 10b
-  deliberately left open.** Phases 1–8 built the CMS; 9a added media on Vercel Blob; 9b the
-  contact form and its defences; 10a the Vitest suite; 10b CI, the security headers, login
-  rate limiting, Playwright, and Lighthouse 99/100/100/100; 11 split the database per
-  environment, put migrations on the deploy, and added analytics; 12a built `/services`.
+- **Current phase:** Phases 1–11 and 12a complete; **10b deliberately left open.**
+  Phases 1–8 built the CMS; 9a added media on Vercel Blob; 9b the contact form and its
+  defences; 10a the Vitest suite; 10b CI, the security headers, login rate limiting,
+  Playwright, Lighthouse 99/100/100/100 and a clean axe audit in both themes; 11 split the
+  database per environment, put migrations on the deploy, added analytics, and moved the
+  site to its own domain; 12a built `/services`.
   **Open:** 🔴 CI is red on the End-to-end job and its log has never been read, so branch
   protection is blocked — that is the one thing holding 10b. Also outstanding: Lighthouse on
-  the six pages other than home, a keyboard-navigation pass, and a custom domain.
-  See `docs/roadmap.md`.
+  the six pages other than home, and a keyboard-navigation pass. See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
