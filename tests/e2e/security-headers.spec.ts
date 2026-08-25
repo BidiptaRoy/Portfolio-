@@ -40,6 +40,19 @@ function watchForViolations(messages: string[]) {
 
 test.describe("security headers", () => {
   test("no public page trips the CSP in a real browser", async ({ page }) => {
+    /*
+      Triples the timeout. This loads every public page and waits for the
+      network to settle on each, which is legitimately slow — and it tipped
+      past the 30s default the moment /services became the seventh route.
+
+      Raising the budget rather than dropping the `networkidle` wait: what is
+      being checked is whether anything got BLOCKED, and a resource the CSP
+      refuses is refused late in the load. Asserting before the page has
+      finished fetching would turn this into a test that passes because it
+      looked too early.
+    */
+    test.slow();
+
     const violations: string[] = [];
     page.on("console", watchForViolations(violations));
     // A blocked subresource also surfaces here, which catches the case where
@@ -65,6 +78,9 @@ test.describe("security headers", () => {
   });
 
   test("no admin page trips the CSP either", async ({ page }) => {
+    // Same reasoning as above, plus a sign-in before the loop starts.
+    test.slow();
+
     const violations: string[] = [];
     page.on("console", watchForViolations(violations));
 

@@ -29,15 +29,15 @@ reasoning, and the stated trigger that would promote it into the header, are in
 `tests/e2e/services.spec.ts`, and that ADR together.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
-- **Current phase:** Phase 11 started, **with Phase 10b deliberately left open.** Phases
-  1–8 built the CMS; 9a put project galleries, the profile portrait, and resume revisions
-  on Vercel Blob; 9b added the contact form, its inbox, and its spam defences; 10a added
-  the Vitest unit suite; 10b added CI, the security headers, login rate limiting, a green
-  13-test Playwright suite, and Lighthouse 99/100/100/100.
-  **Open in 10b:** 🔴 CI is red on the End-to-end job and its log has not been read, so
-  branch protection is blocked; the axe scan and the light-theme accessibility pass are
-  also outstanding. **In progress in 11:** the database split — the code is done, the Neon
-  and Vercel dashboard steps are not. See `docs/roadmap.md`.
+- **Current phase:** Phase 12a done; Phase 11 all but its last item; **Phase 10b
+  deliberately left open.** Phases 1–8 built the CMS; 9a added media on Vercel Blob; 9b the
+  contact form and its defences; 10a the Vitest suite; 10b CI, the security headers, login
+  rate limiting, Playwright, and Lighthouse 99/100/100/100; 11 split the database per
+  environment, put migrations on the deploy, and added analytics; 12a built `/services`.
+  **Open:** 🔴 CI is red on the End-to-end job and its log has never been read, so branch
+  protection is blocked — that is the one thing holding 10b. Also outstanding: Lighthouse on
+  the six pages other than home, a keyboard-navigation pass, and a custom domain.
+  See `docs/roadmap.md`.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -122,7 +122,7 @@ All verified working. Run from the repository root.
 | `npm run format:check` | Prettier check (CI-safe)                                           |
 | `npm test`             | Vitest unit suite, once. Needs no database and no network.         |
 | `npm run test:watch`   | The same suite, in watch mode                                      |
-| `npm run e2e`          | Playwright. **Needs `E2E_DATABASE_URL`** — see below.              |
+| `npm run e2e`          | Playwright, 23 tests incl. axe. **Needs `E2E_DATABASE_URL`**.      |
 | `npm run e2e:ui`       | The same suite in Playwright's UI mode, for writing tests          |
 | `npm run e2e:report`   | Open the HTML report from the last run                             |
 
@@ -340,6 +340,10 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
   Analytics was added in Phase 11 without touching it — see `docs/decisions/0014` for how
   that was verified, and for the rule that if Vercel ever moves the script off-origin, the
   dependency goes rather than the policy bending.
+- **A link inside a paragraph gets `proseLinkStyles`,** which underlines it. Colour alone
+  fails WCAG 1.4.1, and it was a real shipped bug: axe reported `link-in-text-block` at
+  serious impact on `/about` and `/services` in both themes, on pages Lighthouse had scored 100. Standalone links — nav, cards, calls to action — are already distinguishable by
+  position and must NOT be underlined. `tests/e2e/accessibility.spec.ts` enforces this.
 - **Never add a color without measuring its contrast** against the theme it sits on. The
   palette is built for outdoor legibility; an unmeasured color silently breaks that. There
   are exactly two text colors (`ink`, `ink-muted`) and adding a third lighter one is how

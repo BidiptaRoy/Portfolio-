@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Container } from "@/components/layout/container";
+import { proseLinkStyles } from "@/components/ui/prose-link";
 import { Rule } from "@/components/ui/rule";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { formatYearMonth } from "@/lib/format";
@@ -48,11 +49,11 @@ export default async function AboutPage() {
       */}
       <p className="text-ink-muted mt-6 max-w-prose text-sm">
         Looking for help with a move, packing, or handyman work? See{" "}
-        <Link href="/services" className="text-accent hover:text-accent-hover transition-colors">
+        <Link href="/services" className={proseLinkStyles}>
           what I take on
         </Link>
         , or{" "}
-        <Link href="/contact" className="text-accent hover:text-accent-hover transition-colors">
+        <Link href="/contact" className={proseLinkStyles}>
           get in touch
         </Link>
         .

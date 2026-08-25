@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Container } from "@/components/layout/container";
 import { buttonStyles } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { proseLinkStyles } from "@/components/ui/prose-link";
 import { Rule } from "@/components/ui/rule";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getReferralLinks, getServices } from "@/server/queries/services";
@@ -150,7 +151,7 @@ export default async function ServicesPage() {
 
         <p className="text-ink-muted mt-2 text-sm">
           Not sure whether something fits?{" "}
-          <Link href="/contact" className="text-accent hover:underline">
+          <Link href="/contact" className={proseLinkStyles}>
             Send me a message
           </Link>{" "}
           and I will tell you honestly.

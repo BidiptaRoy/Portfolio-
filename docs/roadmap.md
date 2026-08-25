@@ -149,14 +149,21 @@ and the filter costs zero JavaScript.
 - [ ] **Lighthouse on the remaining pages** — `/about`, `/experience`,
       `/projects`, a project detail page, `/resume`, `/contact`. Only the home
       page has been measured.
-- [ ] **The axe audit itself — still NOT RUN.** Lighthouse's Accessibility
-      category runs a _subset_ of axe's rules, so 100 there is not the same
-      result. Needs the axe DevTools extension, in a normal (non-InPrivate)
-      window.
-- [ ] **Both, again with `prefers-color-scheme: light`.** The runs above were
-      made on a machine set to dark, so they measured the dark palette. Light
-      is a full token swap and therefore a different set of contrast
-      measurements. DevTools → Rendering → Emulate CSS media feature.
+- [x] **The axe audit — RUN, and it found a real bug.** Automated in
+      `tests/e2e/accessibility.spec.ts` via `@axe-core/playwright`: WCAG 2.1 A
+      and AA across all seven public pages and three admin screens, **in BOTH
+      colour schemes**. That closes the light-theme gap in the same stroke —
+      Playwright emulates `prefers-color-scheme`, so neither palette depends
+      on what the machine happens to be set to any more.
+- [x] **Finding: `link-in-text-block`, serious impact, `/about` and
+      `/services`, both themes.** Links inside paragraphs were distinguished by
+      colour alone, failing WCAG 1.4.1 — and this palette's accent is a warm
+      tan on warm ink, one of the harder pairs to tell apart. **Lighthouse
+      scored Accessibility 100 on those same pages**, because it runs only a
+      subset of axe's rules. That is the entire argument for running axe
+      separately, demonstrated rather than asserted. Fixed with a persistent
+      underline via `proseLinkStyles`; standalone links are deliberately left
+      alone, since position already distinguishes them.
 - [ ] Full keyboard navigation pass — needs a human at a keyboard
 
 > **The first Lighthouse run after a deploy is worthless.** The first attempt
