@@ -5,31 +5,25 @@ working block, with a stop-and-review checkpoint at the end.** No phase is attem
 single operation.
 
 > 🔴 **10b is NOT complete, and was left open deliberately.** CI is red on the
-> End-to-end job and its log has not been read; branch protection is blocked behind it.
-> The axe scan, the light-theme accessibility pass, and Lighthouse on the six pages other
-> than home are also outstanding. Work moved on to Phase 11 with these known open — they
-> are listed under 10b below, not lost.
+> End-to-end job and **its log has never been read** — that is the single blocker, and
+> branch protection sits behind it. Work moved on with it known-open rather than pretending
+> otherwise. Everything else in 10b has since closed.
 
-**Phase 10a complete. Current phase: 10b — Playwright, CI, and hardening.** The CMS is live,
-every content type is editable at `/admin`, media uploads to Vercel Blob, the contact form
-accepts, stores, and emails messages, and 187 unit tests now guard the checks that were
-previously run once from scratch scripts. Login rate limiting landed, and Playwright is
-green — 13 end-to-end tests covering the auth boundary, every admin screen signed in,
-create → publish → appears publicly, and a CSP check in a real browser. **Phase 9 is now
-fully closed** — `RESEND_API_KEY` reached the Vercel project on 2026-08-23 and the
-deployment carrying it is live, so production notifies as well as stores.
+**Phases 1–12a built. Phase 11 is one item from done; 10b has one blocker.** The CMS is
+live, every content type is editable at `/admin`, media uploads to Vercel Blob, the contact
+form stores and emails, and `/services` carries the client-facing area with its referral
+link as data. **194 unit tests and 23 end-to-end tests** — the latter covering the auth
+boundary, every admin screen signed in, create → publish → appears publicly, a CSP check in
+a real browser, and an axe audit in both colour schemes.
 
-The e2e suite runs against a dedicated Neon branch named `e2e`, never the application's
-own database — see the warning below and `docs/decisions/0011`. Set `E2E_DATABASE_URL`
-and `E2E_DIRECT_URL` in `.env.local`; `npm run e2e` refuses to start without them.
+**Databases are now split per environment** (`docs/decisions/0012`): `production` on Vercel
+only, `development` in `.env.local`, `e2e` for the Playwright suite. Migrations are applied
+by the deployment itself, gated on `VERCEL_ENV=production`. That closed the condition
+`docs/decisions/0011` could only bound — `npm run db:seed` and `db:reset` no longer point at
+live content.
 
-> ⚠ **Found while setting up Playwright: there is only one database.** `.env.local` and
-> the Vercel project both point at the same Neon database, so "local development" and
-> "production content" are the same rows. That was survivable while nothing wrote to it
-> automatically; an e2e suite that creates and publishes projects changes the stakes, and
-> `/projects` is dynamic, so a stray test project would be served publicly. The suite
-> refuses to run against it (`docs/decisions/0011`), but the underlying condition is
-> Phase 11's to fix.
+Set `E2E_DATABASE_URL` and `E2E_DIRECT_URL` in `.env.local`; `npm run e2e` refuses to start
+without them, and refuses again if they name the same database as `DATABASE_URL`.
 
 Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
 
@@ -625,7 +619,16 @@ appeared, since a check cannot be required until GitHub has seen it once.
       nobody reads. Sentry was rejected for now on bundle size, a `connect-src`
       entry, and third-party session data — see 0014 for the reasoning and for
       what would change it.
-- [ ] Custom domain and DNS — **low priority, genuinely last**
+- [x] **`npm run verify:deploy`** — checks a deployment is internally consistent about its
+      own origin, not merely up. Written before the domain move, because that move's
+      failure mode is silent: if `NEXT_PUBLIC_SITE_URL` lags the domain, every page returns
+      200 while every canonical tag, the sitemap, robots and both OG images still name the
+      old origin, and search engines see two identical sites. Verified both ways — 21/21
+      against production, 10 failures and exit 1 against a different origin.
+- [ ] **Custom domain: `bidiptaroy.com`, bought through Vercel.** Decided 2026-08-24.
+      The code needs no change — `getSiteUrl()` was written for this in Phase 1 and there
+      is no hard-coded origin anywhere in `src/`. The whole change is: 1. Vercel → Domains → Buy `bidiptaroy.com`, assign to this project 2. Set `NEXT_PUBLIC_SITE_URL=https://bidiptaroy.com` (Production scope) — **without
+      quotes**, and redeploy, since it is baked in at build time 3. Confirm Vercel redirects the old `*.vercel.app` URL to the new domain 4. `npm run verify:deploy -- https://bidiptaroy.com --old https://portfolio-ten-theta-d09qbq67e8.vercel.app` 5. Update the URL in `README.md`, `CLAUDE.md`, `.env.example` and this file 6. Re-check the Resend sender and, later, domain verification for email
 
 ## Phase 12 — Services and referral
 

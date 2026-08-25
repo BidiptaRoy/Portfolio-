@@ -146,6 +146,17 @@ types have never been emitted. `next typegen` produces them without a full build
 | `npm run db:reset`     | Drop, re-migrate, re-seed. **Destroys all data.**          |
 | `npm run admin:create` | Create or update the single admin. Hidden password prompt. |
 
+**`npm run verify:deploy -- https://origin [--old https://previous]`** checks that a
+deployment is not merely up but internally consistent about which origin it thinks it is:
+every public route answers, every canonical tag and every `sitemap.xml` entry names that
+origin, `og:image` is absolute and on it, `robots.txt` points at its sitemap, the security
+headers survived, and the old origin redirects rather than serving a duplicate.
+
+Run it after any domain change. `getSiteUrl()` feeds `metadataBase`, canonicals, the
+sitemap, robots and both OG image routes — so if the domain moves and
+`NEXT_PUBLIC_SITE_URL` does not, every page still returns 200 while telling crawlers the
+site lives somewhere else. Nothing errors, and "does it load" will not catch it.
+
 `npm run build` runs `prisma generate` first, so a fresh clone builds without a
 database being reachable.
 
