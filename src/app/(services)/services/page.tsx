@@ -94,13 +94,23 @@ export default async function ServicesPage() {
         </div>
       ) : (
         /*
-          A supported state, not an error. Services are created at
-          /admin/services, and since Phase 11 the seed runs against the
-          development database — so a freshly deployed production genuinely
-          has none until they are entered.
+          A supported state, and as of Phase 12a the EXPECTED one — Bidipta
+          chose to run this page on the Taskrabbit profile alone rather than
+          maintain a service list in two places, which is a reasonable call
+          when the platform's own listing is always current and this one would
+          not be.
+
+          So this copy must read as finished, not as a page waiting for
+          content. The earlier wording ("Services are not listed yet") said the
+          opposite, directly above a live promo code.
+
+          Adding services at /admin/services replaces this paragraph with the
+          cards, and nothing else has to change.
         */
-        <p className="text-ink-muted mt-12 text-sm">
-          Services are not listed yet. Get in touch and I can tell you what I take on.
+        <p className="text-ink-muted mt-8 max-w-prose text-sm leading-relaxed">
+          The full list of what I take on, along with current rates and availability, lives on my
+          Taskrabbit profile — it is always up to date there, which a copy here would not be. Moving
+          help, packing, and handyman work are the usual ones.
         </p>
       )}
 

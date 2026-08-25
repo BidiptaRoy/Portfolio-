@@ -1,4 +1,4 @@
-import { expect, test, type ConsoleMessage } from "@playwright/test";
+import { expect, test, type ConsoleMessage, type Page } from "@playwright/test";
 
 import { signIn } from "./support/auth";
 
@@ -30,6 +30,26 @@ const PUBLIC_ROUTES = [
   "/services", // the client-facing area — reached from the footer, not the nav
 ];
 
+/**
+ * Waits long enough for a refusal to have been reported, deterministically.
+ *
+ * NOT `waitForLoadState("networkidle")`, which is what this used first and
+ * which Playwright's own docs discourage. It waits for a 500ms gap in network
+ * activity, and Next's link prefetching keeps reopening that gap — the suite
+ * went from 53s to 2.5m and then failed on a timeout that had nothing to do
+ * with the policy under test. A test that fails for reasons unrelated to its
+ * subject is worse than no test, because it trains you to re-run it.
+ *
+ * `page.goto` already resolves on `load`, so every subresource the document
+ * references has been requested and either fetched or refused by then. This
+ * short fixed pause covers the console message being delivered to the
+ * listener, which is the only thing still outstanding.
+ */
+async function settle(page: Page) {
+  await page.waitForLoadState("load");
+  await page.waitForTimeout(250);
+}
+
 function watchForViolations(messages: string[]) {
   return (message: ConsoleMessage) => {
     if (message.type() === "error" && CSP_VIOLATION.test(message.text())) {
@@ -40,19 +60,6 @@ function watchForViolations(messages: string[]) {
 
 test.describe("security headers", () => {
   test("no public page trips the CSP in a real browser", async ({ page }) => {
-    /*
-      Triples the timeout. This loads every public page and waits for the
-      network to settle on each, which is legitimately slow — and it tipped
-      past the 30s default the moment /services became the seventh route.
-
-      Raising the budget rather than dropping the `networkidle` wait: what is
-      being checked is whether anything got BLOCKED, and a resource the CSP
-      refuses is refused late in the load. Asserting before the page has
-      finished fetching would turn this into a test that passes because it
-      looked too early.
-    */
-    test.slow();
-
     const violations: string[] = [];
     page.on("console", watchForViolations(violations));
     // A blocked subresource also surfaces here, which catches the case where
@@ -67,10 +74,7 @@ test.describe("security headers", () => {
     for (const route of PUBLIC_ROUTES) {
       await test.step(route, async () => {
         await page.goto(route);
-        // The policy governs what loads, so give the page a moment to finish
-        // loading before judging it. `networkidle` is the right wait here even
-        // though it is discouraged for assertions about content.
-        await page.waitForLoadState("networkidle");
+        await settle(page);
       });
     }
 
@@ -78,9 +82,6 @@ test.describe("security headers", () => {
   });
 
   test("no admin page trips the CSP either", async ({ page }) => {
-    // Same reasoning as above, plus a sign-in before the loop starts.
-    test.slow();
-
     const violations: string[] = [];
     page.on("console", watchForViolations(violations));
 

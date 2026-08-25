@@ -656,10 +656,28 @@ appeared, since a check cannot be required until GitHub has seen it once.
 deliberately carries no rates, no availability claims, and no testimonials — the same
 standard that dropped an unverifiable stat bar in Phase 3.
 
-⚠ **Production has no services until they are entered at `/admin/services`.** Since
-Phase 11 the seed runs against the development database, so `src/content/services.ts`
-populates local work only. The public page renders a short fallback until then, and the
-dashboard warns when every service is a draft.
+**Production deliberately runs with NO service rows — decided by Bidipta, 2026-08-24.**
+Only the referral link is published there. The reasoning is sound and worth keeping: the
+Taskrabbit profile lists the work, the rates, and the availability, and it is always
+current, whereas a second copy on this site would go stale silently. One source of truth
+beats two.
+
+Two consequences follow, and both are handled rather than left to chance:
+
+- The public page's zero-services copy was rewritten to read as **finished** rather than
+  as waiting for content. Its earlier wording — "Services are not listed yet" — sat
+  directly above a live promo code and made a deliberate choice look like an unfinished
+  page.
+- **The seasonal coverage area is not shown publicly.** It lives on `Service.serviceArea`,
+  so with no service rows there is nowhere for it to render. That detail is genuinely
+  useful to a client — it answers "do you cover where I am, when I need it" — and it is
+  currently only in `src/content/services.ts` and this roadmap. If it should be public,
+  the cheapest home is the referral link's `description` at `/admin/services`, which is
+  already editable and already renders above the booking button.
+
+`src/content/services.ts` therefore seeds development only, and stays as the record of the
+agreed wording. Adding services at `/admin/services` swaps the fallback for the cards with
+no other change.
 
 ### Phase 12b — Growing it into a business _(future)_
 
