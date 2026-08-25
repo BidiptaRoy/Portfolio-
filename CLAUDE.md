@@ -28,7 +28,7 @@ reasoning, and the stated trigger that would promote it into the header, are in
 `docs/decisions/0013` — changing this means changing `navItems`, the assertion in
 `tests/e2e/services.spec.ts`, and that ADR together.
 
-- **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
+- **Live URL:** https://bidiptaroy.com
 - **Current phase:** Phase 12a done; Phase 11 all but its last item; **Phase 10b
   deliberately left open.** Phases 1–8 built the CMS; 9a added media on Vercel Blob; 9b the
   contact form and its defences; 10a the Vitest suite; 10b CI, the security headers, login

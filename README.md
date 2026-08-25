@@ -7,7 +7,7 @@ Built as a full-stack application rather than a static site, so that portfolio c
 projects, experience, education, skills — can eventually be managed as **data through an
 admin dashboard** instead of by editing source files.
 
-**Live:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
+**Live:** https://bidiptaroy.com
 
 **Status:** Phase 2 of 11 — design system. See [`docs/roadmap.md`](docs/roadmap.md).
 

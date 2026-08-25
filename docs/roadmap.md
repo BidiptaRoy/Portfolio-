@@ -25,7 +25,7 @@ live content.
 Set `E2E_DATABASE_URL` and `E2E_DIRECT_URL` in `.env.local`; `npm run e2e` refuses to start
 without them, and refuses again if they name the same database as `DATABASE_URL`.
 
-Live: https://portfolio-ten-theta-d09qbq67e8.vercel.app
+Live: https://bidiptaroy.com
 
 The ordering is deliberate: **a live, deployed public site exists at the end of Phase 5**,
 before the database, authentication, or CMS. The read façade (`src/server/queries/`) is what
@@ -625,10 +625,38 @@ appeared, since a check cannot be required until GitHub has seen it once.
       200 while every canonical tag, the sitemap, robots and both OG images still name the
       old origin, and search engines see two identical sites. Verified both ways — 21/21
       against production, 10 failures and exit 1 against a different origin.
-- [ ] **Custom domain: `bidiptaroy.com`, bought through Vercel.** Decided 2026-08-24.
-      The code needs no change — `getSiteUrl()` was written for this in Phase 1 and there
-      is no hard-coded origin anywhere in `src/`. The whole change is: 1. Vercel → Domains → Buy `bidiptaroy.com`, assign to this project 2. Set `NEXT_PUBLIC_SITE_URL=https://bidiptaroy.com` (Production scope) — **without
-      quotes**, and redeploy, since it is baked in at build time 3. Confirm Vercel redirects the old `*.vercel.app` URL to the new domain 4. `npm run verify:deploy -- https://bidiptaroy.com --old https://portfolio-ten-theta-d09qbq67e8.vercel.app` 5. Update the URL in `README.md`, `CLAUDE.md`, `.env.example` and this file 6. Re-check the Resend sender and, later, domain verification for email
+- [x] **Custom domain — `bidiptaroy.com` is LIVE**, bought through Vercel and verified
+      2026-08-24. The code needed no change at all: `getSiteUrl()` was written for this in
+      Phase 1 and there is no hard-coded origin anywhere in `src/`. **21 of 22 checks pass**
+      — all seven routes, every canonical, all 14 sitemap URLs, `og:image`, `robots.txt`,
+      and the security headers.
+
+> **The move demonstrated precisely the failure `verify:deploy` exists to catch.** Between
+> attaching the domain and redeploying, `bidiptaroy.com` returned **200 on all seven routes
+> while every canonical tag, the `og:image`, all 14 sitemap URLs and `robots.txt` still
+> named the old `*.vercel.app` address.** Nothing errored; "does the site load" would have
+> passed it. `NEXT_PUBLIC_*` is inlined into the bundle at build time, so the variable does
+> nothing until a rebuild. That is the step never to skip.
+>
+> A second snag worth recording: `NEXT_PUBLIC_SITE_URL` had originally been created as a
+> Vercel **Secret**, and a `NEXT_PUBLIC_` value cannot be secret — Next compiles it into the
+> client bundle by definition. Vercel refuses the combination, and a saved secret cannot be
+> converted, so it had to be **deleted and recreated as type Config**.
+>
+> Scope is **Production only**, which is better than Production-and-Preview: previews then
+> fall through to `VERCEL_PROJECT_PRODUCTION_URL`, which is exactly the fallback
+> `src/lib/site.ts` documents, so a preview build never emits canonicals pointing at itself.
+
+- [ ] **The old `*.vercel.app` URL still answers 200 instead of redirecting** — the one
+      failing check. Largely mitigated already: that origin now emits
+      `canonical → https://bidiptaroy.com`, so search engines will consolidate. A redirect
+      is still cleaner than relying on a hint. Vercel → Domains → **Edit** on the
+      `*.vercel.app` entry → redirect to `bidiptaroy.com`, then re-run
+      `npm run verify:deploy` with `--old` pointed at the old URL.
+- [ ] **Resend still sends from `onboarding@resend.dev`** and delivers only to the
+      registered address. Owning the domain makes verification possible, which would let
+      contact notifications come from an address at `bidiptaroy.com` and reach anyone.
+      Worth doing; not urgent while Bidipta is the only recipient.
 
 ## Phase 12 — Services and referral
 
@@ -747,7 +775,7 @@ happened — that the build went green and a route added in that phase answers i
 production:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://portfolio-ten-theta-d09qbq67e8.vercel.app/login
+curl -s -o /dev/null -w '%{http_code}\n' https://bidiptaroy.com/login
 ```
 
 This exists because Phases 6, 7 and 8 all built cleanly locally, pushed successfully, and
