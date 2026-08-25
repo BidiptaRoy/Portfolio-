@@ -647,9 +647,19 @@ dashboard warns when every service is a draft.
 Bidipta's stated intent is to expand this into a service-based business. Things that
 would matter then, none of which should be invented for him:
 
-- [ ] Rates, or a stated basis for quoting. Needs a decision, not a guess
-- [ ] Service radius and travel policy
-- [ ] Availability — currently fitted around classes, which is a real constraint
+- [x] **Rates — resolved by pointing, not quoting.** They live on the Taskrabbit
+      profile, are always current there, and are one click away via the referral
+      link. Nothing is restated on this site, because a copied figure goes stale
+      silently while the client is charged something else. The no-rate tests
+      stay: pointing at rates is not quoting one.
+- [x] **Coverage area — supplied 2026-08-24 and now accurate.** NYC excluding the
+      Bronx plus all of Long Island, May 10 – August 31 and again roughly
+      December 19 – January 18; Boston, MA otherwise. Stored in `serviceArea`
+      so the dates are a CMS edit each year. This also corrected a real
+      overstatement: "Greater New York" included the Bronx, which is not covered.
+- [ ] Travel policy — whether he travels beyond those areas, and on what terms
+- [ ] Availability within a season — currently fitted around classes, which is a
+      real constraint a client booking a moving day would want stated
 - [ ] Testimonials or completed-job counts, if Taskrabbit exposes them verifiably
 - [ ] Per-service detail pages, once a service has more to say than a card holds
 - [ ] Whether the nav trigger in `docs/decisions/0013` has fired

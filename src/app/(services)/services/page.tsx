@@ -25,7 +25,7 @@ import { getReferralLinks, getServices } from "@/server/queries/services";
 export const metadata: Metadata = {
   title: "Services",
   description:
-    "Moving assistance, home packing, and handyman work offered directly to clients in Boston and Greater New York, booked through Taskrabbit.",
+    "Moving assistance, home packing, and handyman work offered directly to clients in Boston, New York City, and Long Island, booked through Taskrabbit.",
   alternates: { canonical: "/services" },
 };
 
@@ -47,8 +47,18 @@ export default async function ServicesPage() {
         lead="Alongside studying computer science, I take on moving, packing, and handyman work for clients directly. Booking and payment are handled through Taskrabbit."
       />
 
+      {/*
+        Rendered as its own labelled line rather than inline after "Available
+        in", because the area carries a seasonal schedule and reads as a
+        sentence, not as a place name. Coverage genuinely moves between cities
+        during the year, and a client checking whether that includes them is
+        the first question this page has to answer.
+      */}
       {sharedArea ? (
-        <p className="text-ink-muted mt-4 text-sm">Available in {sharedArea}.</p>
+        <p className="text-ink-muted mt-6 max-w-prose text-sm leading-relaxed">
+          <span className="text-ink font-medium">Where and when: </span>
+          {sharedArea}
+        </p>
       ) : null}
 
       {services.length > 0 ? (

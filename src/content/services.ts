@@ -23,6 +23,27 @@ import type { Service } from "@/types/content";
  *
  * Those are the fields a future version fills in from the CMS, not from here.
  */
+/**
+ * Where the work is available, and when.
+ *
+ * One constant because all three services share it — three copies of a
+ * seasonal schedule is three places for it to be wrong next year. It stays a
+ * per-service FIELD rather than becoming a global setting, because coverage is
+ * a property of a service and they may diverge: taking on packing in one city
+ * and assembly in another is an ordinary thing to do.
+ *
+ * The dates move year to year, which is exactly why this is data. Editing it
+ * is a CMS field, not a deploy.
+ *
+ * From Bidipta, 2026-08-24. Note "excluding the Bronx" is deliberate and not a
+ * rounding of "Greater New York" — the earlier wording claimed coverage he
+ * does not offer.
+ */
+const SERVICE_AREA =
+  "New York City (excluding the Bronx) and all of Long Island from May 10 to August 31, " +
+  "and again over winter break — roughly December 19 to January 18. " +
+  "Boston, MA for the rest of the year.";
+
 export const services: Service[] = [
   {
     slug: "moving-assistance",
@@ -38,7 +59,7 @@ export const services: Service[] = [
       "Carrying items up and down stairs",
       "Placing furniture where you actually want it",
     ],
-    serviceArea: "Boston, MA · Greater New York",
+    serviceArea: SERVICE_AREA,
     pricingNote: null,
   },
   {
@@ -53,7 +74,7 @@ export const services: Service[] = [
       "Room-by-room packing where that is all you need",
       "Labelling so unpacking is not a second puzzle",
     ],
-    serviceArea: "Boston, MA · Greater New York",
+    serviceArea: SERVICE_AREA,
     pricingNote: null,
   },
   {
@@ -68,7 +89,7 @@ export const services: Service[] = [
       "General handyman tasks around the home",
       "Mounting and installation within reason",
     ],
-    serviceArea: "Boston, MA · Greater New York",
+    serviceArea: SERVICE_AREA,
     pricingNote: null,
   },
 ].map((entry, index) => serviceSchema.parse({ ...entry, status: "PUBLISHED", sortOrder: index }));

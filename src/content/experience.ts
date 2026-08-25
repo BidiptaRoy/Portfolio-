@@ -45,7 +45,10 @@ export const experience: Experience[] = [
     // Taskrabbit is where the work is found, not who the work is for.
     // Rendered as "via Taskrabbit" — never as an employer.
     platform: "Taskrabbit",
-    location: "Boston, MA · Greater New York",
+    // "Greater New York" overstated it — the Bronx is not covered. Kept short
+    // here because this is a resume-style entry; the seasonal detail lives on
+    // /services, where a client is actually deciding.
+    location: "Boston, MA · New York City · Long Island",
     startDate: "2026-04",
     endDate: null,
     current: true,

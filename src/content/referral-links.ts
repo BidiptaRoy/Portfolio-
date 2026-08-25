@@ -19,9 +19,16 @@ export const referralLinks: ReferralLink[] = [
     label: "Book on Taskrabbit",
     url: "https://tr.co/bidipta-r",
     promoCode: "TSKGXDEV",
+    /*
+      Rates live on the Taskrabbit profile and are deliberately not restated
+      here. That is not evasiveness — it is the only way they can be right.
+      A figure copied onto this site is a figure that goes stale silently,
+      while the platform's own listing is always current and is what a client
+      is actually charged. So this points, rather than quotes.
+    */
     description:
-      "Booking, scheduling, and payment are handled by Taskrabbit. The promo code applies " +
-      "to your first task.",
+      "Booking, scheduling, payment, and current rates are all handled on Taskrabbit — " +
+      "the profile lists everything. The promo code applies to your first task.",
   },
 ].map((entry, index) =>
   referralLinkSchema.parse({ ...entry, status: "PUBLISHED", sortOrder: index }),
