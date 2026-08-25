@@ -96,8 +96,11 @@ Outstanding content gaps — these need Bidipta, not invention:
       `engagementType: "PLATFORM_ENGAGEMENT"` / `platform: "Taskrabbit"` /
       `organization: null`, and verified rendering on the production
       `/experience` page as _via Taskrabbit_.
-- [ ] **`outcomes` and `challenges` are empty on every project.** These are what make a
-      detail page worth reading, and they cannot be fabricated.
+- [x] **`outcomes` and `challenges` — RESOLVED AS DECLINED, 2026-08-24.** Not written, and
+      not a gap. Bidipta's judgement: mundane to write and unlikely to be read. The design
+      already assumes it — both sections are **omitted entirely when empty**, so the detail
+      pages read as finished rather than as forms with blanks. Reopen only if he changes
+      his mind, and it is then a CMS edit with no code involved.
 - [ ] **Confirm B.A. vs B.S.** — currently "Bachelor's degree", accurate either way.
 - [ ] **Project screenshots.** Upload support exists as of Phase 9a; the
       images themselves still need to be taken and uploaded at `/admin`.
@@ -119,9 +122,14 @@ Outstanding content gaps — these need Bidipta, not invention:
 `/projects?tech=Python` URL is worth more than prerendering a seven-item list,
 and the filter costs zero JavaScript.
 
-> The resume PDF currently published has a typo in its contact email
-> (`bidiptar@bu.com` should be `bidiptar@bu.edu`). Set `status` to `"DRAFT"` in
-> `src/content/resume.ts` to pull it from the public site without deleting it.
+> **Correction (2026-08-24): the resume's `bidiptar@bu.com` is NOT a typo.** Bidipta
+> confirmed it is a valid address of his. Earlier notes here and in
+> `src/content/resume.ts` claimed otherwise and have been fixed — a wrong warning is
+> worse than none, because it invites someone to "correct" a working address.
+>
+> The site does publish a different address (`bidiptar@bu.edu`, in `profile.email` and
+> both social links), so the resume and the site do not match. Both reach him, so nothing
+> bounces; whether recruiters should see one address or two is his content decision.
 
 ## Phase 5 — SEO, accessibility, performance
 

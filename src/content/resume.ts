@@ -2,18 +2,21 @@ import { resumeVersionSchema } from "@/lib/validation/content";
 import type { ResumeVersion } from "@/types/content";
 
 /**
- * ⚠ THE CURRENT FILE CONTAINS A TYPO IN THE CONTACT EMAIL.
+ * The PDF header reads `bidiptar@bu.com`, which earlier notes here called a
+ * typo. **It is not** — Bidipta confirmed on 2026-08-24 that it is a valid
+ * address of his. Corrected rather than left standing, because a wrong warning
+ * is worse than none: it invites someone to "fix" a working address.
  *
- * The PDF header reads `bidiptar@bu.com`; the correct address is
- * `bidiptar@bu.edu`. Anyone who downloads this and replies to the address on
- * it will have their message bounce, silently. Bidipta is aware and is
- * preparing a corrected version; this is published as a placeholder in the
- * meantime at his request.
+ * Worth knowing, though: the site publishes `bidiptar@bu.edu` — in
+ * `profile.email` and in both social links — so the resume and the site give
+ * **different** addresses. Both reach him, so nothing bounces. Whether a
+ * recruiter should see one address or two is a content decision, not a bug,
+ * and it is his to make.
  *
- * To pull it from the public site without deleting anything, change `status`
- * to "DRAFT". The Resume page then renders without a download link, and no
- * other file needs touching — this is exactly what the publish workflow is
- * for. Replace the PDF in public/resume/ and flip it back when corrected.
+ * To pull a revision from the public site without deleting anything, change
+ * `status` to "DRAFT". The Resume page then renders without a download link
+ * and no other file needs touching — this is exactly what the publish workflow
+ * is for.
  */
 export const resumeVersions: ResumeVersion[] = [
   {
