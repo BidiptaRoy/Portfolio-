@@ -216,6 +216,47 @@ export const educationFormSchema = z.object({
   sortOrder: z.coerce.number().int(),
 });
 
+export const serviceFormSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Required")
+    .regex(SLUG, "Lowercase letters, numbers and hyphens only"),
+  name: z.string().trim().min(1, "Required"),
+  summary: z.string().trim().min(1, "Required"),
+  description: z.string().trim().min(1, "Required"),
+  includes: lineList,
+  serviceArea: optionalText,
+  /*
+    Free text, and deliberately not a number field.
+
+    Rates are quoted per task on the platform and change. A price stored as a
+    number invites rendering it as one, and a figure on a public page is a
+    promise to a stranger that nobody remembers making. If a real rate is ever
+    offered, it should arrive as a field with a currency and a review — not by
+    someone typing a number into a box labelled "price".
+  */
+  pricingNote: optionalText,
+  status: z.enum(["DRAFT", "PUBLISHED"]),
+  sortOrder: z.coerce.number().int(),
+});
+
+export const referralLinkFormSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Required")
+    .regex(SLUG, "Lowercase letters, numbers and hyphens only"),
+  label: z.string().trim().min(1, "Required"),
+  // A full absolute URL. This field's only job is to send someone off-site, so
+  // a malformed value is a dead end for a person about to become a client.
+  url: z.url("Enter a full URL, including https://"),
+  promoCode: optionalText,
+  description: optionalText,
+  status: z.enum(["DRAFT", "PUBLISHED"]),
+  sortOrder: z.coerce.number().int(),
+});
+
 export const skillFormSchema = z.object({
   name: z.string().trim().min(1, "Required"),
   category: z.enum(["LANGUAGE", "FRAMEWORK", "DATABASE", "TOOL", "PRACTICE"]),

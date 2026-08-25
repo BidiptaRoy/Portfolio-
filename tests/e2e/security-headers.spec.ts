@@ -27,6 +27,7 @@ const PUBLIC_ROUTES = [
   "/projects", // the only dynamic public route
   "/resume", // <object data=…> → object-src and frame-src
   "/contact", // the public form
+  "/services", // the client-facing area — reached from the footer, not the nav
 ];
 
 function watchForViolations(messages: string[]) {

@@ -31,6 +31,9 @@ const STATIC_ROUTES = [
   "/admin/profile",
   "/admin/resume",
   "/admin/messages",
+  "/admin/services",
+  "/admin/services/new",
+  "/admin/services/links/new",
 ];
 
 /**

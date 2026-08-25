@@ -289,6 +289,62 @@ model SocialLink {
   updatedAt DateTime      @updatedAt
 }
 
+/// A service offered directly to clients — Phase 12.
+///
+/// Deliberately separate from Experience, which describes the same Taskrabbit
+/// work. An Experience row is a record addressed to recruiters; a Service is
+/// an offer addressed to someone deciding whether to hire him. Merging them
+/// would mean one audience's page changing to suit the other's reader.
+///
+/// There is no `price` column, and that is a decision rather than an omission.
+/// Rates are quoted per task on the platform and change; a number stored here
+/// would end up printed on a public page as a promise nobody remembers making.
+/// `pricingNote` is free text for describing how pricing works.
+model Service {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  summary     String
+  description String
+  includes    String[]
+  serviceArea String?
+  pricingNote String?
+
+  status    PublishStatus @default(DRAFT)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+/// An outbound referral destination — Phase 12.
+///
+/// Every outbound Taskrabbit link in the application points at `/r/[slug]`,
+/// never at `url` directly. That indirection is why adding click tracking
+/// later is one insert in one file instead of an audit of every page for the
+/// links somebody forgot. The seam was cut early on purpose; see
+/// docs/architecture.md.
+///
+/// `promoCode` lives here for the same reason the URL does: a promo code
+/// hard-coded into a component is a promo code that expires and needs a
+/// developer.
+model ReferralLink {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  label       String
+  url         String
+  promoCode   String?
+  description String?
+
+  status    PublishStatus @default(DRAFT)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
 /// A message sent through the public contact form.
 ///
 /// NOT a content model, which is why it has no `status` or `sortOrder`

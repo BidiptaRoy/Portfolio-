@@ -183,6 +183,57 @@ export interface SocialLink extends ContentMeta {
   url: string;
 }
 
+/**
+ * A service offered directly to clients — Phase 12.
+ *
+ * Separate from `Experience` even though the Taskrabbit entry describes the
+ * same work, because they answer different questions. An Experience entry is
+ * a record of what Bidipta has done, addressed to recruiters; a Service is an
+ * offer, addressed to someone deciding whether to hire him. Folding them
+ * together would mean one page's content changing to suit the other's reader.
+ */
+export interface Service extends ContentMeta {
+  slug: string;
+  name: string;
+  /** One line. Used on cards and in the page's list. */
+  summary: string;
+  /** Long form. The detail a client actually needs. */
+  description: string;
+  /** What the job includes. Empty is fine — the list is hidden when blank. */
+  includes: string[];
+  /** Where it is offered, e.g. "Boston, MA · Greater New York". */
+  serviceArea: string | null;
+  /**
+   * Free text about how pricing works — NEVER a rate.
+   *
+   * Rates are quoted per task on the platform and change. A figure printed on
+   * a public page is a promise to a stranger that nobody remembers making, and
+   * it is exactly the kind of content the CMS exists to keep out of
+   * components. Null until Bidipta writes one himself.
+   */
+  pricingNote: string | null;
+}
+
+/**
+ * An outbound referral destination, stored as data — Phase 12.
+ *
+ * Every outbound Taskrabbit link points at `/r/[slug]` rather than at the
+ * destination, so that adding click tracking later is one insert in one file
+ * rather than an audit of every page for links someone forgot. That seam was
+ * cut deliberately early; see docs/architecture.md.
+ *
+ * The promo code lives here for the same reason it is not in a component: a
+ * promo code hard-coded into JSX is one that expires and needs a developer.
+ */
+export interface ReferralLink extends ContentMeta {
+  slug: string;
+  label: string;
+  url: string;
+  /** Shown alongside the link when present. */
+  promoCode: string | null;
+  description: string | null;
+}
+
 export interface Profile {
   name: string;
   headline: string;

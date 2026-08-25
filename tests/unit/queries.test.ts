@@ -1,3 +1,6 @@
+import { readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getEducation } from "@/server/queries/education";
@@ -17,6 +20,7 @@ import {
   getProjectTechnologies,
 } from "@/server/queries/projects";
 import { getCurrentResume } from "@/server/queries/resume";
+import { getReferralLink, getReferralLinks, getServices } from "@/server/queries/services";
 import { getSkills, getSkillsByCategory } from "@/server/queries/skills";
 
 /**
@@ -47,6 +51,8 @@ const { prisma } = vi.hoisted(() => {
       socialLink: model(),
       resumeVersion: model(),
       profile: model(),
+      service: model(),
+      referralLink: model(),
     },
   };
 });
@@ -101,6 +107,11 @@ describe("the PUBLISHED filter", () => {
     ["getSkillsByCategory", getSkillsByCategory],
     ["getSocialLinks", getSocialLinks],
     ["getCurrentResume", getCurrentResume],
+    ["getServices", getServices],
+    ["getReferralLinks", getReferralLinks],
+    // An unpublished referral link is how a promo code is retired. Leaking one
+    // keeps an expired offer live on a page that promises it.
+    ["getReferralLink", () => getReferralLink("taskrabbit")],
   ];
 
   it.each(publicReads)("%s never queries without it", async (_name, run) => {
@@ -114,15 +125,52 @@ describe("the PUBLISHED filter", () => {
     }
   });
 
+  /**
+   * The façade files this test knows about. Checked against the directory
+   * below, so it cannot silently fall behind.
+   *
+   * `admin.ts` is excluded deliberately — it is the one façade file whose
+   * reads INCLUDE drafts, which is why it lives under a filename that would
+   * look wrong in a public page's imports.
+   */
+  const FACADE_MODULES = [
+    "education",
+    "experience",
+    "profile",
+    "projects",
+    "resume",
+    "services",
+    "skills",
+  ];
+
+  it("knows about every file in the public façade", () => {
+    /*
+      Added in Phase 12, after adding services/ and finding this suite still
+      green. The export check below imports a FIXED list of modules, so it
+      catches a new export in a file it already knows — and is blind to an
+      entire new façade file, which is the larger mistake.
+
+      That is the same hole tests/unit/content.test.ts was written to close
+      for src/content, and it is closed the same way: compare the list against
+      what is actually on disk. CLAUDE.md claims both lists fail when you
+      forget; until now that was only half true.
+    */
+    const directory = fileURLToPath(new URL("../../src/server/queries", import.meta.url));
+
+    const onDisk = readdirSync(directory)
+      .filter((file) => file.endsWith(".ts"))
+      .map((file) => file.replace(/\.ts$/, ""))
+      .filter((name) => name !== "admin")
+      .sort();
+
+    expect(onDisk).toEqual([...FACADE_MODULES].sort());
+  });
+
   it("covers every exported function in the public façade", async () => {
     /*
       The sweep above is only as good as its list, so the list is checked
       against the modules themselves. A new export shows up here as a
       failure naming it, rather than as a query nobody tested.
-
-      `admin.ts` is excluded deliberately — it is the one façade file whose
-      reads INCLUDE drafts, which is why it lives under a filename a public
-      page importing it would look wrong.
     */
     const facades = await Promise.all([
       import("@/server/queries/projects"),
@@ -131,6 +179,7 @@ describe("the PUBLISHED filter", () => {
       import("@/server/queries/skills"),
       import("@/server/queries/profile"),
       import("@/server/queries/resume"),
+      import("@/server/queries/services"),
     ]);
 
     const exported = facades

@@ -19,7 +19,14 @@ its long-term job is to let portfolio content be **edited as data through an adm
 instead of by editing React components.
 
 A second audience exists alongside recruiters: prospective clients for independent
-professional services offered via Taskrabbit. That area is planned but not built.
+professional services offered via Taskrabbit. As of Phase 12a that area exists at
+`/services`, with its own CMS module and referral links stored as data.
+
+**`/services` is deliberately absent from the main navigation, and a test enforces it.**
+It is reached from the footer and from About, and is indexed and directly linkable. The
+reasoning, and the stated trigger that would promote it into the header, are in
+`docs/decisions/0013` — changing this means changing `navItems`, the assertion in
+`tests/e2e/services.spec.ts`, and that ADR together.
 
 - **Live URL:** https://portfolio-ten-theta-d09qbq67e8.vercel.app
 - **Current phase:** Phase 11 started, **with Phase 10b deliberately left open.** Phases
@@ -243,6 +250,12 @@ src/
                         serverless and therefore no limit at all. The login
                         limit is enforced in `authorize()`, NOT in the login
                         action; see docs/decisions/0010 before moving it.
+  app/(services)/       ★ The client-facing area, Phase 12a. Its own route
+                        group so it can grow its own layout without
+                        restructuring. NOT in the main nav — docs/decisions/0013.
+  app/r/[slug]/         Outbound referral redirect. Every Taskrabbit link on
+                        the site points here, never at the destination, so
+                        click tracking is one insert rather than a link audit.
   types/
     content.ts          Domain model. The shape the Prisma models will implement.
 tests/
@@ -335,6 +348,15 @@ Note: `globals.css` lives at `src/app/globals.css` (Next's convention), not `src
 - **Terminology (non-negotiable):** Taskrabbit is a _platform through which services are
   provided_, never an employer. Render as "via Taskrabbit". The data model enforces this
   with a `platform` field separate from `organization`.
+- **Never write a rate into services content.** There is no `price` column on `Service`,
+  on purpose — pricing is quoted per task on the platform and changes, and a figure on a
+  public page is a promise to a stranger that nobody remembers making. `pricingNote` is
+  free text for describing how pricing works. Two tests enforce this, one on the seed
+  source and one on the rendered page, because production content comes from the CMS
+  rather than from `src/content`.
+- **Every outbound referral link goes through `/r/[slug]`,** never straight to the
+  destination. That indirection is why adding click tracking later is one insert in one
+  file instead of an audit of every page for links somebody forgot.
 
 ---
 

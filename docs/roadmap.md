@@ -96,8 +96,12 @@ bar ("5+ projects", "4+ years coding") dropped as unverifiable padding.
 
 Outstanding content gaps — these need Bidipta, not invention:
 
-- [ ] **Taskrabbit dates.** Omitted entirely rather than guessed. Must be added as
-      `PLATFORM_ENGAGEMENT` / `platform: "Taskrabbit"` / `organization: null`.
+- [x] **Taskrabbit dates — supplied and live.** Confirmed by Bidipta 2026-08-24:
+      started mid-April 2026, ongoing, worked around his availability. Already
+      recorded as `startDate: "2026-04"` / `current: true` /
+      `engagementType: "PLATFORM_ENGAGEMENT"` / `platform: "Taskrabbit"` /
+      `organization: null`, and verified rendering on the production
+      `/experience` page as _via Taskrabbit_.
 - [ ] **`outcomes` and `challenges` are empty on every project.** These are what make a
       detail page worth reading, and they cannot be fabricated.
 - [ ] **Confirm B.A. vs B.S.** — currently "Bachelor's degree", accurate either way.
@@ -604,13 +608,51 @@ appeared, since a check cannot be required until GitHub has seen it once.
 - [ ] Error monitoring, analytics
 - [ ] Custom domain and DNS — **low priority, genuinely last**
 
-## Phase 12+ — Services and referral _(future, separate planning session)_
+## Phase 12 — Services and referral
 
-- [ ] `(services)` route group and pages
-- [ ] Services CMS module
-- [ ] `/r/[slug]` redirect
-- [ ] Referral links as data
-- [ ] Optional click tracking (hashed IP, no cookies)
+### Phase 12a — The services area
+
+- [x] `(services)` route group and `/services` page, driven by the query façade
+- [x] `Service` and `ReferralLink` models, migration `20260825003655`, seeded
+- [x] Services CMS module — `/admin/services`, with referral links on the same
+      page rather than a nav entry of their own for one row
+- [x] `/r/[slug]` redirect, resolving from the database. An unknown or retired
+      slug goes to `/services` rather than 404 — whoever followed it was, a
+      moment ago, a prospective client
+- [x] Referral links as data, promo code included. `TSKGXDEV` appears in no
+      component
+- [x] **Absent from the main nav, and tested.** Reached from the footer and
+      About; indexed and directly linkable. `docs/decisions/0013` records the
+      reasoning and the **stated trigger** for promoting it into the header —
+      written down so that promoting it is a decision rather than a drift
+- [x] **No rate is quotable.** No `price` column, and two tests — one on the
+      seed source, one on the rendered page. Both seen to fail against a
+      planted `$50 per hour`
+- [x] e2e coverage: footer entry point, the three services, the `/r/` hop and
+      its promo code, and the unknown-slug fallback. 19 tests green
+- [ ] Optional click tracking (hashed IP, no cookies) — the seam is cut and
+      unused. One insert in `src/app/r/[slug]/route.ts` when it is wanted
+
+**Phase 12a complete.** The content is Bidipta's own description of the work, and
+deliberately carries no rates, no availability claims, and no testimonials — the same
+standard that dropped an unverifiable stat bar in Phase 3.
+
+⚠ **Production has no services until they are entered at `/admin/services`.** Since
+Phase 11 the seed runs against the development database, so `src/content/services.ts`
+populates local work only. The public page renders a short fallback until then, and the
+dashboard warns when every service is a draft.
+
+### Phase 12b — Growing it into a business _(future)_
+
+Bidipta's stated intent is to expand this into a service-based business. Things that
+would matter then, none of which should be invented for him:
+
+- [ ] Rates, or a stated basis for quoting. Needs a decision, not a guess
+- [ ] Service radius and travel policy
+- [ ] Availability — currently fitted around classes, which is a real constraint
+- [ ] Testimonials or completed-job counts, if Taskrabbit exposes them verifiably
+- [ ] Per-service detail pages, once a service has more to say than a card holds
+- [ ] Whether the nav trigger in `docs/decisions/0013` has fired
 
 ### Supplied by Bidipta, 2026-08-24 — for whoever picks this up
 
@@ -632,8 +674,15 @@ this by keeping `platform` separate from `organization`, and
 `organization` field. The same care applies to any services page: it describes
 Bidipta's own independent work, with Taskrabbit as the channel.
 
-Still outstanding for this area, and still needing Bidipta rather than
-invention: the **Taskrabbit engagement dates** noted in Phase 3.
+The Taskrabbit engagement dates that were outstanding here are **supplied and
+live** — see Phase 3. What this area still needs from Bidipta rather than
+invention is anything that makes a claim: rates, guaranteed availability,
+service radius, and testimonials. None of those may be written for him.
+
+**Intent, in his words (2026-08-24):** he plans to expand this into a
+service-based business, so the services area is not a footnote to the
+portfolio — it is the seed of a second product. Build it as data behind the
+CMS from the start, on the same reasoning the promo code is not hard-coded.
 
 ---
 

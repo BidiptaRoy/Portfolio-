@@ -7,7 +7,9 @@ import { education } from "@/content/education";
 import { experience } from "@/content/experience";
 import { profile, socialLinks } from "@/content/profile";
 import { projects } from "@/content/projects";
+import { referralLinks } from "@/content/referral-links";
 import { resumeVersions } from "@/content/resume";
+import { services } from "@/content/services";
 import { skills } from "@/content/skills";
 import {
   assertUniqueSlugs,
@@ -15,7 +17,9 @@ import {
   experienceSchema,
   profileSchema,
   projectSchema,
+  referralLinkSchema,
   resumeVersionSchema,
+  serviceSchema,
   skillSchema,
   socialLinkSchema,
 } from "@/lib/validation/content";
@@ -46,7 +50,16 @@ describe("content collections", () => {
     // src/content that nobody imports is invisible to every other test,
     // which is precisely the condition that let a duplicate slug ship.
     const directory = fileURLToPath(new URL("../../src/content", import.meta.url));
-    const imported = ["education", "experience", "profile", "projects", "resume", "skills"];
+    const imported = [
+      "education",
+      "experience",
+      "profile",
+      "projects",
+      "referral-links",
+      "resume",
+      "services",
+      "skills",
+    ];
 
     const onDisk = readdirSync(directory)
       .filter((file) => file.endsWith(".ts"))
@@ -87,12 +100,44 @@ describe("content collections", () => {
     for (const link of socialLinks) expect(() => socialLinkSchema.parse(link)).not.toThrow();
   });
 
+  it("parses every service", () => {
+    expect(services.length).toBeGreaterThan(0);
+    for (const service of services) expect(() => serviceSchema.parse(service)).not.toThrow();
+  });
+
+  it("parses every referral link", () => {
+    expect(referralLinks.length).toBeGreaterThan(0);
+    for (const link of referralLinks) expect(() => referralLinkSchema.parse(link)).not.toThrow();
+  });
+
   it("keeps slugs unique within each collection", () => {
     // Two entries sharing a slug share a URL, and `getBySlug` silently
     // returns whichever sorts first.
     expect(() => assertUniqueSlugs(projects, "project")).not.toThrow();
     expect(() => assertUniqueSlugs(experience, "experience")).not.toThrow();
     expect(() => assertUniqueSlugs(education, "education")).not.toThrow();
+    expect(() => assertUniqueSlugs(services, "service")).not.toThrow();
+    expect(() => assertUniqueSlugs(referralLinks, "referral link")).not.toThrow();
+  });
+
+  it("quotes no rate anywhere in the services content", () => {
+    /*
+      Pricing is quoted per task on the platform and changes. A figure printed
+      on a public page is a promise to a stranger that nobody remembers
+      making — and unlike a stale project description, it is the kind of
+      mistake a client can hold you to.
+
+      The Service model has no `price` column for this reason, so the only way
+      a rate reaches the page is by being written into prose. This catches
+      that. If a real rate is ever offered deliberately, it belongs in a field
+      with a currency and a review, not in a sentence.
+    */
+    const currency = /(\$|USD|\bper hour\b|\/hr\b|\bhourly rate\b)/i;
+
+    for (const service of services) {
+      const prose = [service.summary, service.description, service.pricingNote ?? ""].join(" ");
+      expect(prose, `${service.slug} must not quote a rate`).not.toMatch(currency);
+    }
   });
 
   it("names no more than one resume version as current", () => {

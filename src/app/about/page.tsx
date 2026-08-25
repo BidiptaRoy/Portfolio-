@@ -47,12 +47,13 @@ export default async function AboutPage() {
         prospective client following a direct link never sees this page at all.
       */}
       <p className="text-ink-muted mt-6 max-w-prose text-sm">
-        Looking for help with a move, packing, or handyman work?{" "}
-        <span className="text-ink-muted italic">
-          A dedicated services page is coming — in the meantime, get in touch via{" "}
-        </span>
+        Looking for help with a move, packing, or handyman work? See{" "}
+        <Link href="/services" className="text-accent hover:text-accent-hover transition-colors">
+          what I take on
+        </Link>
+        , or{" "}
         <Link href="/contact" className="text-accent hover:text-accent-hover transition-colors">
-          the contact page
+          get in touch
         </Link>
         .
       </p>

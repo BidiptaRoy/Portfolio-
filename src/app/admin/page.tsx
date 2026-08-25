@@ -27,6 +27,7 @@ export default async function AdminPage() {
     { label: "Project images", value: counts.images, href: "/admin/projects" },
     { label: "Resume revisions", value: counts.resumes, href: "/admin/resume" },
     { label: "Unread messages", value: counts.unreadMessages, href: "/admin/messages" },
+    { label: "Services", value: counts.services, href: "/admin/services" },
   ];
 
   return (
@@ -72,6 +73,18 @@ export default async function AdminPage() {
       {counts.publishedResumes === 0 ? (
         <p className="text-ink-muted mt-2 text-sm">
           No resume is published — <code>/resume</code> currently offers no download.
+        </p>
+      ) : null}
+
+      {/*
+        The services page is not in the main navigation, so nothing about
+        normal browsing would reveal that every service on it is a draft — the
+        page would simply render its "not listed yet" fallback to anyone who
+        followed a link, indefinitely and silently.
+      */}
+      {counts.services > 0 && counts.serviceDrafts === counts.services ? (
+        <p className="text-ink-muted mt-2 text-sm">
+          Every service is a draft — <code>/services</code> currently lists nothing.
         </p>
       ) : null}
 

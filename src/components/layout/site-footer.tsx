@@ -26,6 +26,23 @@ export function SiteFooter() {
                 </Link>
               </li>
             ))}
+
+            {/*
+              Services is appended here rather than added to `navItems`, and
+              that is deliberate: it must NOT appear in the header. The main
+              nav is optimized for recruiters, and the footer is where the
+              client-facing area is reachable without putting it in front of
+              an audience it is not for. See docs/decisions/0013 — including
+              the trigger that would promote it into the header.
+            */}
+            <li>
+              <Link
+                href="/services"
+                className="text-ink-muted hover:text-accent text-sm transition-colors"
+              >
+                Services
+              </Link>
+            </li>
           </ul>
         </nav>
       </Container>

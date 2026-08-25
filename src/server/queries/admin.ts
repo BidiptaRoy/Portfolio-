@@ -8,7 +8,9 @@ import type {
   Profile,
   Project,
   ProjectImage,
+  ReferralLink,
   ResumeVersion,
+  Service,
   Skill,
 } from "@/types/content";
 
@@ -278,6 +280,82 @@ export async function getProfileForAdmin(): Promise<AdminProfile | null> {
   });
 }
 
+// ── Services (Phase 12) ────────────────────────────────────────────────────
+
+/** Includes drafts. Never call from a public page. */
+export async function getServicesForAdmin(): Promise<Service[]> {
+  await requireAdmin();
+
+  return prisma.service.findMany({
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: {
+      slug: true,
+      name: true,
+      summary: true,
+      description: true,
+      includes: true,
+      serviceArea: true,
+      pricingNote: true,
+      status: true,
+      sortOrder: true,
+    },
+  });
+}
+
+export async function getServiceForAdmin(slug: string): Promise<Service | null> {
+  await requireAdmin();
+
+  return prisma.service.findUnique({
+    where: { slug },
+    select: {
+      slug: true,
+      name: true,
+      summary: true,
+      description: true,
+      includes: true,
+      serviceArea: true,
+      pricingNote: true,
+      status: true,
+      sortOrder: true,
+    },
+  });
+}
+
+/** Includes drafts — a retired promo code is an unpublished row. */
+export async function getReferralLinksForAdmin(): Promise<ReferralLink[]> {
+  await requireAdmin();
+
+  return prisma.referralLink.findMany({
+    orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+    select: {
+      slug: true,
+      label: true,
+      url: true,
+      promoCode: true,
+      description: true,
+      status: true,
+      sortOrder: true,
+    },
+  });
+}
+
+export async function getReferralLinkForAdmin(slug: string): Promise<ReferralLink | null> {
+  await requireAdmin();
+
+  return prisma.referralLink.findUnique({
+    where: { slug },
+    select: {
+      slug: true,
+      label: true,
+      url: true,
+      promoCode: true,
+      description: true,
+      status: true,
+      sortOrder: true,
+    },
+  });
+}
+
 /** Counts for the dashboard, including drafts. */
 export async function getAdminCounts() {
   await requireAdmin();
@@ -293,6 +371,8 @@ export async function getAdminCounts() {
     publishedResumes,
     unreadMessages,
     unsentNotifications,
+    services,
+    serviceDrafts,
   ] = await Promise.all([
     prisma.project.count(),
     prisma.project.count({ where: { status: "DRAFT" } }),
@@ -307,6 +387,8 @@ export async function getAdminCounts() {
     // because a broken notification pipeline is otherwise indistinguishable
     // from an empty inbox.
     prisma.contactMessage.count({ where: { notifiedAt: null } }),
+    prisma.service.count(),
+    prisma.service.count({ where: { status: "DRAFT" } }),
   ]);
 
   return {
@@ -320,5 +402,7 @@ export async function getAdminCounts() {
     publishedResumes,
     unreadMessages,
     unsentNotifications,
+    services,
+    serviceDrafts,
   };
 }

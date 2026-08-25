@@ -38,6 +38,22 @@ export function revalidateAboutPaths() {
   revalidatePath("/contact");
 }
 
+/**
+ * The services area.
+ *
+ * `/about` is in the list because it links to `/services`, and `/sitemap.xml`
+ * because the page is listed there — the sitemap is how a prospective client
+ * finds this page at all, given it is deliberately absent from the main nav.
+ *
+ * `/r/[slug]` is NOT here and needs no entry: it is `force-dynamic`, so it
+ * reads the database on every request and has nothing cached to invalidate.
+ */
+export function revalidateServicePaths() {
+  revalidatePath("/services");
+  revalidatePath("/about");
+  revalidatePath("/sitemap.xml");
+}
+
 /** The resume is offered on its own page and linked from the home page. */
 export function revalidateResumePaths() {
   revalidatePath("/");

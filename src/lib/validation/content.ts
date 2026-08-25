@@ -142,6 +142,31 @@ export const socialLinkSchema = z.object({
   url: z.string().min(1),
 });
 
+export const serviceSchema = z.object({
+  ...contentMeta,
+  slug,
+  name: z.string().min(1),
+  summary: z.string().min(1),
+  description: z.string().min(1),
+  includes: z.array(z.string().min(1)),
+  serviceArea: z.string().min(1).nullable(),
+  // Defaulted so a service can be written without one. There is deliberately
+  // no number type here and no `price` field: see the note on the type.
+  pricingNote: z.string().min(1).nullable().default(null),
+});
+
+export const referralLinkSchema = z.object({
+  ...contentMeta,
+  slug,
+  label: z.string().min(1),
+  // A real absolute URL, not a path. This is the one field whose whole job is
+  // to send a visitor off-site, so a malformed value is a dead end for someone
+  // who was about to become a client.
+  url: z.url(),
+  promoCode: z.string().min(1).nullable().default(null),
+  description: z.string().min(1).nullable().default(null),
+});
+
 export const profileSchema = z.object({
   name: z.string().min(1),
   headline: z.string().min(1),

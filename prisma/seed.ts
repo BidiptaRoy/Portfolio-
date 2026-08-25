@@ -9,7 +9,9 @@ import { education } from "../src/content/education";
 import { experience } from "../src/content/experience";
 import { profile, socialLinks } from "../src/content/profile";
 import { projects } from "../src/content/projects";
+import { referralLinks } from "../src/content/referral-links";
 import { resumeVersions } from "../src/content/resume";
+import { services } from "../src/content/services";
 import { skills } from "../src/content/skills";
 import { PrismaClient } from "../src/generated/prisma/client";
 
@@ -115,6 +117,24 @@ async function main() {
     }
   }
   console.log(`✓ ${resumeVersions.length} resume versions`);
+
+  for (const service of services) {
+    await prisma.service.upsert({
+      where: { slug: service.slug },
+      update: service,
+      create: service,
+    });
+  }
+  console.log(`✓ ${services.length} services`);
+
+  for (const link of referralLinks) {
+    await prisma.referralLink.upsert({
+      where: { slug: link.slug },
+      update: link,
+      create: link,
+    });
+  }
+  console.log(`✓ ${referralLinks.length} referral links`);
 }
 
 main()

@@ -20,6 +20,11 @@ const sections = [
   { href: "/admin/resume", label: "Resume", ready: true },
   { href: "/admin/profile", label: "Profile", ready: true },
   { href: "/admin/messages", label: "Messages", ready: true },
+  // Services IS in the admin nav, unlike the public one. The reason services
+  // are hidden from the public nav is about which audience sees what; there is
+  // one admin, and hiding a section from yourself is just a section you forget
+  // to update.
+  { href: "/admin/services", label: "Services", ready: true },
 ];
 
 export function AdminNav() {
