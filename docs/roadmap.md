@@ -4,15 +4,22 @@ Eleven phases. Each is independently reviewable, mergeable, and deployable. **On
 working block, with a stop-and-review checkpoint at the end.** No phase is attempted in a
 single operation.
 
-> 🔴 **10b is NOT complete, and was left open deliberately.** CI is red on the
-> End-to-end job and **its log has never been read** — that is the single blocker, and
-> branch protection sits behind it. Work moved on with it known-open rather than pretending
-> otherwise. Everything else in 10b has since closed.
+> ✅ **The CI blocker is found and fixed** (2026-08-25). The End-to-end job was not slow,
+> flaky, or mis-configured: the e2e database guard was refusing to run against a database
+> it had itself just been handed. `playwright.config.ts` sets `DATABASE_URL` to the e2e
+> database for the server it starts, and `prepare-database.ts` re-runs the guard inside
+> that server, where the two variables are then identical by construction. Locally
+> `.env.local` supplies a different `DATABASE_URL` and masks it entirely — which is why it
+> was green on every developer machine and red on all seven pushes. `docs/decisions/0015`.
+>
+> **What remains for 10b is confirmation, not diagnosis:** the first green `End-to-end` run
+> on `main`, and then branch protection. Note that `Verify` was never the blocker — it has
+> passed on all eight runs, so it can be required today.
 
-**Phases 1–11 and 12a are complete. 10b has one blocker: the CI log.** The site is live at
+**Phases 1–11 and 12a are complete.** The site is live at
 its own domain, every content type is editable at `/admin`, media uploads to Vercel Blob,
 the contact form stores and emails, and `/services` carries the client-facing area with its
-referral link as data. **194 unit tests and 23 end-to-end tests** — the latter covering the
+referral link as data. **202 unit tests and 23 end-to-end tests** — the latter covering the
 auth boundary, every admin screen signed in, create → publish → appears publicly, a CSP
 check in a real browser, and an axe audit in both colour schemes.
 
@@ -482,20 +489,34 @@ yet evidence of anything.
       `X-Frame-Options`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`.
       Verified against real responses from `npm start`, and the policy is
       unit-tested.
-- [ ] 🔴 **CI is currently RED and the cause is unknown.** Run #2 (commit
-      `9916332`, 2026-08-24) failed after 2m31s. Run #1 was green, so the
-      failure arrived with the Playwright commit — most likely the new
-      **End-to-end** job, which had never executed anywhere before that push.
-      **The log has not been read.** There is no `gh` CLI on this machine, so
-      diagnosing it needs someone to open the run in a browser. Deliberately
-      deferred rather than guessed at; likely candidates are the 5-minute
-      `webServer` timeout against a cold CI build, or the Chromium/Postgres
-      setup in the job.
-- [ ] **Branch protection on `main`** — needs the GitHub dashboard; there is no
-      `gh` CLI on this machine. Require a PR, and require **both** the `Verify`
-      and `End-to-end` checks. **Blocked:** GitHub cannot offer a check as
-      required until it has seen it pass at least once, and `End-to-end` has
-      never passed. Fix CI first.
+- [x] **CI diagnosed and fixed (2026-08-25).** The instinct in the original note
+      was right about _where_ — the new End-to-end job — and wrong about _what_:
+      it was not the `webServer` timeout and not the Chromium/Postgres setup.
+      The e2e database guard was tripping on itself. `playwright.config.ts`
+      resolves the test database, then starts the server with `DATABASE_URL` set
+      to it; `prepare-database.ts` re-runs the guard inside that server, where
+      `DATABASE_URL` and `E2E_DATABASE_URL` are now the same string because the
+      config made them so, and the guard refuses. Exit code 1, surfacing as
+      `Process from config.webServer was not able to start.` Fixed with an
+      explicit marker the config sets and the guard honours — full account and
+      the rejected alternatives in `docs/decisions/0015`.
+      **Verified three ways:** reproduced deliberately before fixing; a new unit
+      test that goes red alone when the fix is reverted; and a full
+      `CI=true npm run e2e` with `.env.local` moved aside so only the `E2E_*`
+      variables exist, which is the runner's exact environment — **23 passed**.
+- [x] **The Actions log was readable all along.** The blocker was recorded as
+      "no `gh` CLI on this machine". This repository is public, so the REST API
+      answers without authentication: `/actions/runs` for conclusions,
+      `/actions/runs/{id}/jobs` for which step failed, and
+      `/check-runs/{job_id}/annotations` for the error text. Only raw log and
+      artifact downloads need a token. The annotation endpoint alone gave the
+      exact error and was enough to find the bug. **Reach for the API before
+      recording a diagnosis as blocked on tooling.**
+- [ ] **Branch protection on `main`** — a dashboard step. Require a PR and
+      require both `Verify` and `End-to-end`.
+      **`Verify` is not blocked and never was** — it has passed on all eight
+      runs, so GitHub will offer it as a required check today. `End-to-end` can
+      be added as required once the fix above produces its first green run.
 - [x] **Playwright installed and configured** — Chromium only, against a
       production build (`npm run e2e`). Four specs written: the auth boundary,
       every admin screen signed in, create → publish → appears publicly, and a
@@ -604,12 +625,16 @@ appeared, since a check cannot be required until GitHub has seen it once.
       production, ahead of review and ahead of the code needing it. Verified for
       `production`, `preview`, and unset: only production migrates, and unset fails
       safe. See `docs/decisions/0012`.
-- [ ] **Split the database per environment — CODE DONE, DASHBOARD PENDING.** Three Neon
-      branches: `production` (Vercel, Production scope only), `development`
-      (`.env.local`), `e2e` (already exists). Until the `development` branch exists and
-      `.env.local` points at it, `npm run db:seed` still reverts the live site to
-      whatever is in git and `npm run db:reset` still destroys it. **This is the item
-      that actually removes the risk; the code above only prepares for it.**
+- [x] **Split the database per environment — DONE, and confirmed by observation
+      2026-08-25.** Three Neon branches: `production` (Vercel, Production scope only),
+      `development` (`.env.local`), `e2e`. This checkbox contradicted the summary at the
+      top of this file for a day; rather than trust either, it was settled against the
+      running system. Production `/services` renders **no service cards** — the
+      zero-rows copy and the booking section only — which is the state Bidipta chose,
+      while the database `.env.local` names holds **three** `Service` rows. Different
+      content therefore means different databases, and `.env.local` is not production.
+      The `development` and `e2e` branches are also distinct Neon endpoints.
+      `npm run db:seed` and `db:reset` no longer reach live content.
 - [ ] Re-scope the Vercel variables: `DATABASE_URL` and `DIRECT_URL` to **Production
       only**, with Preview pointed at `development`. Not load-bearing — the
       `VERCEL_ENV` gate covers the dangerous case — but it stops preview deployments

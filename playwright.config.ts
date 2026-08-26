@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-import { resolveTestDatabase } from "./tests/e2e/support/database";
+import { GUARD_PASSED_MARKER, resolveTestDatabase } from "./tests/e2e/support/database";
 
 /**
  * End-to-end tests. The half of this application that unit tests cannot reach.
@@ -132,6 +132,20 @@ export default defineConfig({
       */
       DATABASE_URL: database.url,
       DIRECT_URL: database.directUrl,
+
+      /*
+        Records that the "is this the live database?" check has already run,
+        just above, against the real ambient environment.
+
+        prepare-database.ts calls resolveTestDatabase() again inside this
+        server command, and the two lines above have just made DATABASE_URL and
+        E2E_DATABASE_URL identical for it — so without this marker that second
+        call compares the e2e database against itself and refuses to start. It
+        did exactly that on every CI run, where there is no .env.local to
+        supply a different DATABASE_URL and mask it. Full account in
+        tests/e2e/support/database.ts.
+      */
+      [GUARD_PASSED_MARKER]: "1",
 
       /*
         ⚠ Required, and its absence is a genuinely confusing failure. Auth.js

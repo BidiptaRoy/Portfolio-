@@ -35,9 +35,17 @@ reasoning, and the stated trigger that would promote it into the header, are in
   Playwright, Lighthouse 99/100/100/100 and a clean axe audit in both themes; 11 split the
   database per environment, put migrations on the deploy, added analytics, and moved the
   site to its own domain; 12a built `/services`.
-  **Open:** 🔴 CI is red on the End-to-end job and its log has never been read, so branch
-  protection is blocked — that is the one thing holding 10b. Also outstanding: Lighthouse on
+  **Open:** the CI failure that held 10b is **found and fixed** — the End-to-end job died
+  because the e2e database guard tripped on itself in CI (`docs/decisions/0015`); the
+  awaited confirmation is the first green run on `main`. Then branch protection, which
+  `Verify` has never blocked — it has passed all eight runs. Also outstanding: Lighthouse on
   the six pages other than home, and a keyboard-navigation pass. See `docs/roadmap.md`.
+
+  **The Actions log is readable without `gh`.** This repository is public, so the REST API
+  answers unauthenticated: `/actions/runs` for conclusions, `/actions/runs/{id}/jobs` for
+  which step failed, and `/check-runs/{job_id}/annotations` for the error text itself. Only
+  raw log and artifact downloads need a token. "There is no `gh` CLI on this machine" was
+  taken as a blocker for a day; it was not one.
 
 Deployment is continuous, not a final step: `main` auto-deploys to the URL above, and pull
 requests get their own preview deployments.
@@ -191,6 +199,18 @@ against `DATABASE_URL` with `-pooler` normalised away so Neon's pooled and direc
 for one database are recognised as the same place. Use a Neon **branch** — a copy-on-write
 clone, made in about ten seconds from the Neon console. Full reasoning and both refusal
 messages: `tests/e2e/support/database.ts`.
+
+**The collision half of that guard is skipped in exactly one place, and must stay skipped
+there.** `playwright.config.ts` runs the guard at module scope and then starts the server
+with `DATABASE_URL` set to the e2e database — so when `prepare-database.ts` re-runs the
+guard inside that server, the two variables are identical because _we_ made them identical.
+The config therefore sets `E2E_DATABASE_GUARD_PASSED=1` and the guard honours it. Without
+it the guard refuses and Playwright reports `Process from config.webServer was not able to
+start. Exit code: 1` — which is what made CI red for seven consecutive pushes while every
+developer machine stayed green, because a local `.env.local` supplies a _different_
+`DATABASE_URL` and hides the collision. `docs/decisions/0015`.
+`tests/unit/e2e-database-guard.test.ts` exercises the guard from an empty directory, so the
+CI shape is covered by the unit suite rather than only by CI.
 
 The database is migrated and seeded by `tests/e2e/prepare-database.ts`, which runs as the
 first step of `npm run e2e:server` — **before** `next build`, not from Playwright's

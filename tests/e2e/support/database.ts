@@ -33,6 +33,16 @@ import { parse as parseEnvFile } from "dotenv";
 
 export type TestDatabase = { url: string; directUrl: string };
 
+/**
+ * Set by playwright.config.ts on the server process it spawns, to record that
+ * the collision check below has already run in the parent — see the comment at
+ * the check itself for why the child cannot run it meaningfully.
+ *
+ * Exported rather than written as a literal in two places so that renaming it
+ * cannot silently disconnect the two halves.
+ */
+export const GUARD_PASSED_MARKER = "E2E_DATABASE_GUARD_PASSED";
+
 /** How a database is identified for the "is this the same one?" comparison. */
 export function identify(connectionString: string): string {
   const url = new URL(connectionString);
@@ -100,7 +110,37 @@ export function resolveTestDatabase(): TestDatabase {
   const directUrl = process.env.E2E_DIRECT_URL ?? local["E2E_DIRECT_URL"] ?? url;
   const production = local["DATABASE_URL"] ?? process.env.DATABASE_URL;
 
-  if (production) {
+  /*
+    ⚠ The ONE place the collision check is skipped, and the reason is that in
+    this one place it would be comparing a value against itself.
+
+    playwright.config.ts calls this function at module scope, against the real
+    ambient environment, and then starts the server with DATABASE_URL set to
+    the database this function just returned. prepare-database.ts runs as the
+    first step of that server command and calls this function AGAIN, because it
+    is also runnable on its own. Inside that child, DATABASE_URL and
+    E2E_DATABASE_URL are the same string by construction — we set them — so the
+    check below compares the e2e database with itself and refuses.
+
+    This is what made every End-to-end run in CI fail from the Playwright commit
+    (9916332) onwards, seven runs in a row, with:
+
+        Error: Process from config.webServer was not able to start. Exit code: 1
+
+    It was invisible locally because .env.local supplies a DATABASE_URL — the
+    development branch — and that takes precedence on the line above, so the
+    comparison was e2e-against-development and passed. CI has no .env.local,
+    falls through to the injected value, and trips. Which is why the suite was
+    green on every developer machine and red on every push.
+
+    Nothing is weakened by skipping it here: the check has already run, in the
+    parent, at the only moment when the ambient DATABASE_URL still named the
+    real database. Defence #1 in the header — that nothing reads DATABASE_URL
+    to decide where to write — is untouched and still holds on its own.
+  */
+  const alreadyChecked = process.env[GUARD_PASSED_MARKER] === "1";
+
+  if (production && !alreadyChecked) {
     const target = identify(url);
 
     if (target === identify(production)) {
